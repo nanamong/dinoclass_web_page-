@@ -1,15 +1,59 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { CheckCircle2, ArrowLeft, Rocket } from 'lucide-react'
+import { clearCart, getCartProducts } from './cartStore'
+import { addOrder } from './orderStore'
+import { getProductById, type Product } from './productStore'
 
 export default function PaymentSuccess() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const orderId = searchParams.get('orderId')
-  const amount = searchParams.get('amount')
 
-  useEffect(() => { window.scrollTo(0, 0) }, [])
+  const [orderId, setOrderId] = useState('')
+  const [amount, setAmount] = useState('')
+
+  useEffect(() => {
+    window.scrollTo(0, 0)
+    
+    const oid = searchParams.get('orderId')
+    const amt = searchParams.get('amount')
+    const isCart = searchParams.get('isCart') === 'true'
+    const productId = searchParams.get('productId')
+
+    if (oid) setOrderId(oid)
+    if (amt) setAmount(amt)
+
+    if (oid && amt) {
+      let items: Product[] = []
+      let orderName = ''
+
+      if (isCart) {
+        items = getCartProducts()
+        if (items.length === 1) orderName = items[0].name
+        else if (items.length > 1) orderName = `${items[0].name} 외 ${items.length - 1}건`
+      } else if (productId) {
+        const prod = getProductById(productId)
+        if (prod) {
+          items = [prod]
+          orderName = prod.name
+        }
+      }
+
+      addOrder({
+        id: oid,
+        orderName,
+        amount: Number(amt),
+        items,
+        status: 'SUCCESS',
+        createdAt: new Date().toISOString()
+      })
+
+      if (isCart) {
+        clearCart()
+      }
+    }
+  }, [searchParams])
 
   return (
     <div className="min-h-[70vh] flex items-center justify-center px-6">

@@ -1,12 +1,14 @@
 import { useState, useEffect, useRef } from 'react'
 import { Routes, Route, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Rocket, Mail, ChevronRight, CheckCircle2, ChevronDown, Wrench } from 'lucide-react'
+import { Rocket, Mail, ChevronRight, CheckCircle2, ChevronDown, Wrench, ShoppingCart } from 'lucide-react'
 import { getProductsByCategory, type Product } from './productStore'
+import { getCartCount } from './cartStore'
 import AdminPanel from './AdminPanel'
 import ProductDetail from './ProductDetail'
 import PaymentSuccess from './PaymentSuccess'
 import CheckoutPage from './CheckoutPage'
+import CartPage from './CartPage'
 
 /* ── 섹션 페이드인 래퍼 ── */
 const SectionFadeIn = ({ children }: { children: React.ReactNode }) => (
@@ -269,6 +271,15 @@ function HomeContent() {
 /* ══════ 메인 App 컴포넌트 ══════ */
 export default function App() {
   const [isAdmin, setIsAdmin] = useState(false)
+  const [cartCount, setCartCount] = useState(0)
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    setCartCount(getCartCount())
+    const handleCartUpdate = () => setCartCount(getCartCount())
+    window.addEventListener('cartUpdated', handleCartUpdate)
+    return () => window.removeEventListener('cartUpdated', handleCartUpdate)
+  }, [])
 
   return (
     <div className="min-h-screen bg-dinoclass-background text-dinoclass-textMain font-sans flex flex-col">
@@ -292,6 +303,17 @@ export default function App() {
             {!isAdmin && (<>
               <button className="text-dinoclass-textSub hover:text-white transition-colors text-sm">로그인</button>
               <button className="bg-dinoclass-spark text-black px-5 py-2 rounded-lg font-bold hover:bg-yellow-400 transition-colors text-sm">마이페이지</button>
+              <button 
+                onClick={() => navigate('/cart')}
+                className="relative p-2 text-dinoclass-textSub hover:text-white transition-colors"
+              >
+                <ShoppingCart size={24} />
+                {cartCount > 0 && (
+                  <span className="absolute top-0 right-0 bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center translate-x-1 -translate-y-1">
+                    {cartCount}
+                  </span>
+                )}
+              </button>
             </>)}
             <button
               id="admin-toggle"
@@ -317,6 +339,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<HomeContent />} />
             <Route path="/products/:id" element={<ProductDetail />} />
+            <Route path="/cart" element={<CartPage />} />
             <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/payment/success" element={<PaymentSuccess />} />
             <Route path="/payment/fail" element={<PaymentSuccess />} />

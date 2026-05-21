@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowLeft, ShoppingCart, Rocket, Tag } from 'lucide-react'
 import { getProductById, CATEGORY_LABELS, type Product } from './productStore'
+import { addToCart } from './cartStore'
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>()
@@ -27,6 +28,18 @@ export default function ProductDetail() {
     navigate(`/checkout?productId=${product.id}`)
   }
 
+  /* ── 장바구니 담기 ── */
+  const handleAddToCart = () => {
+    if (!product) return
+    const added = addToCart(product.id)
+    if (added) {
+      if (window.confirm('장바구니에 담겼습니다. 장바구니로 이동하시겠습니까?')) {
+        navigate('/cart')
+      }
+    } else {
+      alert('이미 장바구니에 담긴 상품입니다.')
+    }
+  }
 
   /* ── 상품 없음 (404) ── */
   if (notFound) {
@@ -152,7 +165,10 @@ export default function ProductDetail() {
             >
               <ShoppingCart size={20} /> 구매하기
             </button>
-            <button className="flex items-center justify-center gap-2 bg-dinoclass-surface border border-dinoclass-surface text-white font-bold py-4 px-6 rounded-xl hover:border-dinoclass-spark/40 transition-all">
+            <button 
+              onClick={handleAddToCart}
+              className="flex items-center justify-center gap-2 bg-dinoclass-surface border border-dinoclass-surface text-white font-bold py-4 px-6 rounded-xl hover:border-dinoclass-spark/40 transition-all"
+            >
               장바구니 담기
             </button>
           </div>

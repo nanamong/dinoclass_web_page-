@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { ArrowLeft, CreditCard, ShieldCheck, Loader2 } from 'lucide-react'
 import { loadTossPayments } from '@tosspayments/tosspayments-sdk'
 import { getProductById, CATEGORY_LABELS, type Product } from './productStore'
+import { getCartProducts } from './cartStore'
 
 // 토스페이먼츠 문서용 테스트 결제위젯 키 (실제 결제 안 됨)
 const TOSS_CLIENT_KEY = 'test_gck_docs_Ovk5rk1EwkEbP0W43n07xlzm'
@@ -17,27 +18,42 @@ function parsePriceToNumber(priceStr: string): number {
 export default function CheckoutPage() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
+  
   const productId = searchParams.get('productId')
+  const isCart = searchParams.get('isCart') === 'true'
 
-  const [product, setProduct] = useState<Product | null>(null)
+  const [checkoutItems, setCheckoutItems] = useState<Product[]>([])
   const [ready, setReady] = useState(false)
   const [paying, setPaying] = useState(false)
+  
   const widgetsRef = useRef<Awaited<ReturnType<Awaited<ReturnType<typeof loadTossPayments>>['widgets']>> | null>(null)
   const paymentMethodRef = useRef<HTMLDivElement>(null)
   const agreementRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     window.scrollTo(0, 0)
-    if (!productId) return
-    const found = getProductById(productId)
-    if (found) setProduct(found)
-  }, [productId])
+    if (isCart) {
+      const cartItems = getCartProducts()
+      if (cartItems.length > 0) setCheckoutItems(cartItems)
+    } else if (productId) {
+      const found = getProductById(productId)
+      if (found) setCheckoutItems([found])
+    }
+  }, [productId, isCart])
+
+  const totalAmount = checkoutItems.reduce((sum, item) => sum + parsePriceToNumber(item.price), 0)
+
+  // 대표 주문명 생성
+  let orderName = ''
+  if (checkoutItems.length === 1) {
+    orderName = checkoutItems[0].name
+  } else if (checkoutItems.length > 1) {
+    orderName = `${checkoutItems[0].name} 외 ${checkoutItems.length - 1}건`
+  }
 
   /* ── 토스페이먼츠 결제위젯 초기화 및 렌더링 ── */
   useEffect(() => {
-    if (!product) return
-    const amount = parsePriceToNumber(product.price)
-    if (amount <= 0) return
+    if (checkoutItems.length === 0 || totalAmount <= 0) return
 
     let destroyed = false
 
@@ -47,7 +63,7 @@ export default function CheckoutPage() {
         const widgets = tossPayments.widgets({ customerKey: 'ANONYMOUS' })
         widgetsRef.current = widgets
 
-        await widgets.setAmount({ currency: 'KRW', value: amount })
+        await widgets.setAmount({ currency: 'KRW', value: totalAmount })
 
         if (destroyed) return
 
@@ -68,17 +84,19 @@ export default function CheckoutPage() {
     })()
 
     return () => { destroyed = true }
-  }, [product])
+  }, [checkoutItems, totalAmount])
 
   /* ── 결제 요청 ── */
   const handlePay = async () => {
-    if (!widgetsRef.current || !product) return
+    if (!widgetsRef.current || checkoutItems.length === 0) return
     setPaying(true)
     try {
+      const orderId = isCart ? `order-cart-${Date.now()}` : `order-${checkoutItems[0].id}-${Date.now()}`
+      const pIdParam = !isCart ? `&productId=${checkoutItems[0].id}` : ''
       await widgetsRef.current.requestPayment({
-        orderId: `order-${product.id}-${Date.now()}`,
-        orderName: product.name,
-        successUrl: `${window.location.origin}/payment/success`,
+        orderId,
+        orderName,
+        successUrl: `${window.location.origin}/payment/success?isCart=${isCart}${pIdParam}`,
         failUrl: `${window.location.origin}/payment/fail`,
       })
     } catch (err: unknown) {
@@ -93,7 +111,7 @@ export default function CheckoutPage() {
   }
 
   /* ── 상품 없음 ── */
-  if (!productId || (productId && !product)) {
+  if (checkoutItems.length === 0) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center px-6 text-center">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
@@ -105,8 +123,6 @@ export default function CheckoutPage() {
       </div>
     )
   }
-
-  const amount = parsePriceToNumber(product?.price || '0')
 
   return (
     <div className="max-w-3xl mx-auto px-6 py-10">
@@ -137,38 +153,46 @@ export default function CheckoutPage() {
       </motion.div>
 
       {/* 주문 요약 */}
-      {product && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.05 }}
-          className="bg-dinoclass-surface/50 rounded-2xl p-6 mb-8 border border-dinoclass-surface"
-        >
-          <h3 className="text-sm text-dinoclass-textSub font-bold mb-4">주문 상품</h3>
-          <div className="flex items-center gap-4">
-            {product.imageUrl && (
-              <div className="w-16 h-16 rounded-xl overflow-hidden bg-zinc-900 flex-shrink-0">
-                <img src={product.imageUrl} alt="" className="w-full h-full object-cover" />
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.05 }}
+        className="bg-dinoclass-surface/50 rounded-2xl p-6 mb-8 border border-dinoclass-surface"
+      >
+        <h3 className="text-sm text-dinoclass-textSub font-bold mb-4 border-b border-dinoclass-surface pb-3">주문 상품 ({checkoutItems.length}개)</h3>
+        
+        <div className="space-y-4 mb-4">
+          {checkoutItems.map((item, idx) => (
+            <div key={idx} className="flex items-center gap-4">
+              {item.imageUrl && (
+                <div className="w-12 h-12 rounded-lg overflow-hidden bg-zinc-900 flex-shrink-0">
+                  <img src={item.imageUrl} alt="" className="w-full h-full object-cover" />
+                </div>
+              )}
+              <div className="flex-grow">
+                <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded mb-1 ${
+                  item.category === 'ebook' ? 'bg-blue-500/15 text-blue-400' :
+                  item.category === 'vod' ? 'bg-purple-500/15 text-purple-400' :
+                  'bg-emerald-500/15 text-emerald-400'
+                }`}>
+                  {CATEGORY_LABELS[item.category]}
+                </span>
+                <p className="font-bold text-white text-sm">{item.name}</p>
               </div>
-            )}
-            <div className="flex-grow">
-              <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded mb-1 ${
-                product.category === 'ebook' ? 'bg-blue-500/15 text-blue-400' :
-                product.category === 'vod' ? 'bg-purple-500/15 text-purple-400' :
-                'bg-emerald-500/15 text-emerald-400'
-              }`}>
-                {CATEGORY_LABELS[product.category]}
-              </span>
-              <p className="font-bold text-white">{product.name}</p>
+              <div className="text-right flex-shrink-0">
+                <span className="text-white font-mono">{item.price}</span>
+              </div>
             </div>
-            <div className="text-right flex-shrink-0">
-              <span className="text-xl font-bold font-mono text-dinoclass-spark">
-                {amount.toLocaleString()}원
-              </span>
-            </div>
-          </div>
-        </motion.div>
-      )}
+          ))}
+        </div>
+
+        <div className="border-t border-dinoclass-surface pt-4 flex justify-between items-center">
+          <span className="text-dinoclass-textSub">총 결제 금액</span>
+          <span className="text-2xl font-bold font-mono text-dinoclass-spark">
+            {totalAmount.toLocaleString()}원
+          </span>
+        </div>
+      </motion.div>
 
       {/* 토스페이먼츠 결제 수단 위젯 */}
       <motion.div
@@ -211,7 +235,7 @@ export default function CheckoutPage() {
           {paying ? (
             <><Loader2 size={20} className="animate-spin" /> 결제 진행 중...</>
           ) : (
-            <><ShieldCheck size={20} /> {amount.toLocaleString()}원 결제하기</>
+            <><ShieldCheck size={20} /> {totalAmount.toLocaleString()}원 결제하기</>
           )}
         </button>
 
@@ -223,3 +247,4 @@ export default function CheckoutPage() {
     </div>
   )
 }
+

@@ -9,6 +9,7 @@ import {
   CATEGORY_LABELS,
   type Product, type ProductCategory
 } from './productStore'
+import { getOrders, updateOrderStatus, deleteOrder, type Order, type OrderStatus } from './orderStore'
 
 const CATEGORIES: ProductCategory[] = ['ebook', 'vod', 'freebie']
 
@@ -85,8 +86,23 @@ export default function AdminPanel() {
   const [editImageUrl, setEditImageUrl] = useState('')
   const [editCategory, setEditCategory] = useState<ProductCategory>('ebook')
 
-  const reload = () => setProducts(getProducts())
-  useEffect(reload, [])
+  /* ── 탭 상태 ── */
+  const [activeTab, setActiveTab] = useState<'products' | 'orders'>('products')
+  const [orders, setOrders] = useState<Order[]>([])
+
+  /* ── 초기 데이터 로드 ── */
+  const reload = () => {
+    setProducts(getProducts())
+  }
+  
+  const reloadOrders = () => {
+    setOrders(getOrders())
+  }
+
+  useEffect(() => {
+    reload()
+    reloadOrders()
+  }, [])
 
   /* ─── handlers ─── */
   const handleDragOver = (e: React.DragEvent) => {
@@ -196,6 +212,21 @@ export default function AdminPanel() {
     setTimeout(() => setToast(null), 2500)
   }
 
+  const handleOrderDelete = (id: string) => {
+    if (confirm('주문 내역을 삭제하시겠습니까?')) {
+      deleteOrder(id)
+      reloadOrders()
+      showToast('🗑️ 주문 내역이 삭제되었습니다.')
+    }
+  }
+
+  const handleOrderStatus = (id: string, currentStatus: OrderStatus) => {
+    const newStatus = currentStatus === 'SUCCESS' ? 'REFUNDED' : 'SUCCESS'
+    updateOrderStatus(id, newStatus)
+    reloadOrders()
+    showToast(`🔄 상태가 [${newStatus === 'SUCCESS' ? '결제완료' : '환불/취소'}]로 변경되었습니다.`)
+  }
+
   const filteredProducts = filterCategory === 'all'
     ? products
     : products.filter((p) => p.category === filterCategory)
@@ -236,8 +267,29 @@ export default function AdminPanel() {
         </div>
       </motion.div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-        {/* ── 좌측: 상품 등록 폼 ── */}
+      {/* 탭 네비게이션 */}
+      <div className="flex gap-4 mb-8 border-b border-dinoclass-surface pb-4">
+        <button
+          onClick={() => setActiveTab('products')}
+          className={`px-6 py-3 rounded-xl font-bold transition-all border ${
+            activeTab === 'products' ? 'bg-dinoclass-spark text-black border-dinoclass-spark' : 'text-dinoclass-textSub border-dinoclass-surface hover:bg-dinoclass-surface/50 hover:border-dinoclass-spark/50 hover:text-white'
+          }`}
+        >
+          📦 상품 DB 관리
+        </button>
+        <button
+          onClick={() => { setActiveTab('orders'); reloadOrders(); }}
+          className={`px-6 py-3 rounded-xl font-bold transition-all border ${
+            activeTab === 'orders' ? 'bg-dinoclass-spark text-black border-dinoclass-spark' : 'text-dinoclass-textSub border-dinoclass-surface hover:bg-dinoclass-surface/50 hover:border-dinoclass-spark/50 hover:text-white'
+          }`}
+        >
+          💳 결제 내역 관리
+        </button>
+      </div>
+
+      {activeTab === 'products' ? (
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+          {/* ── 좌측: 상품 등록 폼 ── */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -619,19 +671,80 @@ export default function AdminPanel() {
           </div>
         </motion.div>
       </div>
+      ) : (
+        /* ── 결제 내역 관리 탭 ── */
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+          <div className="admin-glass rounded-2xl border border-dinoclass-surface overflow-hidden">
+            <div className="px-6 py-5 border-b border-dinoclass-surface flex items-center justify-between">
+              <h2 className="font-bold text-white text-lg flex items-center gap-2">
+                <Database className="text-dinoclass-spark" size={20} />
+                주문 내역 DB
+              </h2>
+              <span className="text-sm font-mono text-dinoclass-textSub">총 {orders.length}건</span>
+            </div>
+            {orders.length === 0 ? (
+              <div className="p-16 text-center text-dinoclass-textSub">
+                <Database size={48} className="mx-auto mb-4 opacity-20" />
+                <p>아직 결제 내역이 없습니다.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-dinoclass-surface/30 text-dinoclass-textSub border-b border-dinoclass-surface">
+                    <tr>
+                      <th className="px-6 py-4 font-medium whitespace-nowrap">결제일시</th>
+                      <th className="px-6 py-4 font-medium whitespace-nowrap">주문번호</th>
+                      <th className="px-6 py-4 font-medium min-w-[200px]">주문명</th>
+                      <th className="px-6 py-4 font-medium whitespace-nowrap text-right">결제금액</th>
+                      <th className="px-6 py-4 font-medium whitespace-nowrap text-center">상태</th>
+                      <th className="px-6 py-4 font-medium whitespace-nowrap text-center">관리</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-dinoclass-surface">
+                    {orders.slice().reverse().map((order) => (
+                      <tr key={order.id} className="hover:bg-dinoclass-surface/20 transition-colors">
+                        <td className="px-6 py-4 whitespace-nowrap text-dinoclass-textSub">
+                          {new Date(order.createdAt).toLocaleString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        </td>
+                        <td className="px-6 py-4 font-mono text-xs text-zinc-500 whitespace-nowrap">{order.id}</td>
+                        <td className="px-6 py-4 text-white font-medium">{order.orderName}</td>
+                        <td className="px-6 py-4 text-right font-mono font-bold text-dinoclass-spark whitespace-nowrap">
+                          {order.amount.toLocaleString()}원
+                        </td>
+                        <td className="px-6 py-4 text-center whitespace-nowrap">
+                          <button
+                            onClick={() => handleOrderStatus(order.id, order.status)}
+                            className={`px-3 py-1 rounded-full text-[10px] font-bold border transition-colors ${
+                              order.status === 'SUCCESS' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20'
+                            }`}
+                          >
+                            {order.status === 'SUCCESS' ? '결제완료' : '환불/취소'}
+                          </button>
+                        </td>
+                        <td className="px-6 py-4 text-center whitespace-nowrap">
+                          <button onClick={() => handleOrderDelete(order.id)} className="p-2 text-zinc-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors" title="내역 삭제">
+                            <Trash2 size={16} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </motion.div>
+      )}
 
       {/* ══════ 수정 모달 ══════ */}
       {editingProduct && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-          {/* 배경 오버레이 */}
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setEditingProduct(null)} />
-          {/* 모달 */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto bg-dinoclass-background border border-dinoclass-surface rounded-2xl shadow-2xl"
           >
-            {/* 모달 헤더 */}
             <div className="sticky top-0 bg-dinoclass-background/95 backdrop-blur-md px-6 py-4 border-b border-dinoclass-surface flex items-center justify-between z-10">
               <h3 className="font-bold text-white text-lg flex items-center gap-2">
                 <Pencil size={16} className="text-dinoclass-spark" />
@@ -642,52 +755,37 @@ export default function AdminPanel() {
               </button>
             </div>
 
-            {/* 모달 본문 */}
             <div className="p-6 space-y-5">
-              {/* 카테고리 */}
               <div>
                 <label className="admin-label flex items-center gap-2 mb-2"><Tag size={14} className="text-dinoclass-spark" /> 상품 종류</label>
                 <div className="relative">
                   <select value={editCategory} onChange={(e) => setEditCategory(e.target.value as ProductCategory)} className="admin-select">
                     {CATEGORIES.map((cat) => (<option key={cat} value={cat}>{CATEGORY_LABELS[cat]}</option>))}
                   </select>
-                  <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-dinoclass-textSub pointer-events-none" />
                 </div>
               </div>
-              {/* 상품명 */}
               <div>
-                <label className="admin-label flex items-center gap-2 mb-2"><Package size={14} className="text-dinoclass-spark" /> 상품명 <span className="text-red-400">*</span></label>
+                <label className="admin-label flex items-center gap-2 mb-2"><Package size={14} className="text-dinoclass-spark" /> 상품명</label>
                 <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="admin-input" />
               </div>
-              {/* 가격 */}
               <div>
-                <label className="admin-label flex items-center gap-2 mb-2"><DollarSign size={14} className="text-dinoclass-spark" /> 가격 <span className="text-red-400">*</span></label>
+                <label className="admin-label flex items-center gap-2 mb-2"><DollarSign size={14} className="text-dinoclass-spark" /> 가격</label>
                 <input type="text" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} className="admin-input" />
               </div>
-              {/* 한 줄 설명 */}
               <div>
                 <label className="admin-label flex items-center gap-2 mb-2"><FileText size={14} className="text-dinoclass-spark" /> 한 줄 설명</label>
                 <input type="text" value={editDescription} onChange={(e) => setEditDescription(e.target.value)} className="admin-input" />
               </div>
-              {/* 이미지 URL */}
               <div>
                 <label className="admin-label flex items-center gap-2 mb-2"><Image size={14} className="text-dinoclass-spark" /> 이미지 URL</label>
-                <input type="text" value={editImageUrl} onChange={(e) => setEditImageUrl(e.target.value)} className="admin-input" placeholder="https://... 또는 base64 데이터" />
-                {editImageUrl && (
-                  <div className="mt-2 rounded-lg overflow-hidden border border-dinoclass-surface h-24 bg-zinc-900">
-                    <img src={editImageUrl} alt="미리보기" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
-                  </div>
-                )}
+                <input type="text" value={editImageUrl} onChange={(e) => setEditImageUrl(e.target.value)} className="admin-input" />
               </div>
-              {/* 상세 페이지 */}
               <div>
                 <label className="admin-label flex items-center gap-2 mb-2"><AlignLeft size={14} className="text-dinoclass-spark" /> 상세 페이지 내용</label>
                 <textarea value={editDetailContent} onChange={(e) => setEditDetailContent(e.target.value)} rows={6} className="admin-input resize-y min-h-[100px]" />
-                <span className="text-[10px] text-dinoclass-textSub font-mono mt-1 block text-right">{editDetailContent.length}자</span>
               </div>
             </div>
 
-            {/* 모달 푸터 */}
             <div className="sticky bottom-0 bg-dinoclass-background/95 backdrop-blur-md px-6 py-4 border-t border-dinoclass-surface flex gap-3">
               <button onClick={() => setEditingProduct(null)} className="flex-1 py-3 rounded-xl border border-dinoclass-surface text-dinoclass-textSub font-bold hover:bg-dinoclass-surface/50 transition-all">취소</button>
               <button onClick={handleEditSave} className="flex-1 py-3 rounded-xl bg-dinoclass-spark text-black font-bold hover:bg-yellow-400 transition-all flex items-center justify-center gap-2"><Save size={16} /> 저장하기</button>
