@@ -8,6 +8,25 @@ export const CATEGORY_LABELS: Record<ProductCategory, string> = {
   freebie: '무료배포자료',
 };
 
+export type DetailBlock = {
+  id: string;
+  type: 'text' | 'image';
+  value: string;
+};
+
+export function parseDetailBlocks(content?: string): DetailBlock[] {
+  if (!content) return [{ id: crypto.randomUUID(), type: 'text', value: '' }];
+  try {
+    const parsed = JSON.parse(content);
+    if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].type) {
+      return parsed;
+    }
+  } catch (e) {
+    // Ignore JSON parse errors for plain text
+  }
+  return [{ id: crypto.randomUUID(), type: 'text', value: content }];
+}
+
 export interface Product {
   id: string;
   category: ProductCategory;

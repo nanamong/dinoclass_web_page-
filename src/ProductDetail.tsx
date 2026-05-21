@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowLeft, ShoppingCart, Rocket, Tag } from 'lucide-react'
-import { getProductById, CATEGORY_LABELS, type Product } from './productStore'
+import { getProductById, CATEGORY_LABELS, type Product, parseDetailBlocks } from './productStore'
 import { addToCart } from './cartStore'
 
 export default function ProductDetail() {
@@ -203,13 +203,31 @@ export default function ProductDetail() {
               상세 설명
             </h2>
             <div className="bg-dinoclass-surface/30 rounded-2xl p-8 md:p-12 border border-dinoclass-surface">
-              <div className="prose-detail max-w-none">
-                {product.detailContent.split('\n').map((line, i) => (
-                  line.trim() === ''
-                    ? <div key={i} className="h-4" />
-                    : <p key={i} className="text-dinoclass-textMain leading-relaxed mb-2 text-base">
-                        {line}
-                      </p>
+              <div className="prose-detail max-w-none flex flex-col gap-6">
+                {parseDetailBlocks(product.detailContent).map((block) => (
+                  <div key={block.id}>
+                    {block.type === 'text' ? (
+                      <div>
+                        {block.value.split('\n').map((line, i) => (
+                          line.trim() === ''
+                            ? <div key={i} className="h-4" />
+                            : <p key={i} className="text-dinoclass-textMain leading-relaxed mb-2 text-base">
+                                {line}
+                              </p>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="w-full flex justify-center rounded-xl overflow-hidden shadow-2xl border border-dinoclass-surface bg-zinc-950 my-6">
+                        {block.value && (
+                          <img
+                            src={block.value}
+                            alt="상세 이미지"
+                            className="w-full max-w-4xl object-contain rounded-xl"
+                          />
+                        )}
+                      </div>
+                    )}
+                  </div>
                 ))}
               </div>
             </div>

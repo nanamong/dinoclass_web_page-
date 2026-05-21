@@ -7,9 +7,10 @@ import {
 import {
   getProducts, addProduct, deleteProduct, updateProduct,
   CATEGORY_LABELS,
-  type Product, type ProductCategory
+  type Product, type ProductCategory, type DetailBlock, parseDetailBlocks
 } from './productStore'
 import { getOrders, updateOrderStatus, deleteOrder, type Order, type OrderStatus } from './orderStore'
+import DetailBlockEditor from './components/DetailBlockEditor'
 
 const CATEGORIES: ProductCategory[] = ['ebook', 'vod', 'freebie']
 
@@ -67,7 +68,8 @@ export default function AdminPanel() {
   const [name, setName] = useState('')
   const [price, setPrice] = useState('')
   const [description, setDescription] = useState('')
-  const [detailContent, setDetailContent] = useState('')
+  /* ─── 에디터 state ─── */
+  const [detailBlocks, setDetailBlocks] = useState<DetailBlock[]>([{ id: crypto.randomUUID(), type: 'text', value: '' }])
   const [imageUrl, setImageUrl] = useState('')
   const [toast, setToast] = useState<string | null>(null)
   const [filterCategory, setFilterCategory] = useState<ProductCategory | 'all'>('all')
@@ -82,7 +84,7 @@ export default function AdminPanel() {
   const [editName, setEditName] = useState('')
   const [editPrice, setEditPrice] = useState('')
   const [editDescription, setEditDescription] = useState('')
-  const [editDetailContent, setEditDetailContent] = useState('')
+  const [editDetailBlocks, setEditDetailBlocks] = useState<DetailBlock[]>([])
   const [editImageUrl, setEditImageUrl] = useState('')
   const [editCategory, setEditCategory] = useState<ProductCategory>('ebook')
 
@@ -164,10 +166,10 @@ export default function AdminPanel() {
       name: name.trim(),
       price: price.trim(),
       description: description.trim(),
-      detailContent: detailContent.trim(),
+      detailContent: JSON.stringify(detailBlocks),
       imageUrl: imageUrl.trim(),
     })
-    setName(''); setPrice(''); setDescription(''); setDetailContent(''); setImageUrl('')
+    setName(''); setPrice(''); setDescription(''); setDetailBlocks([{ id: crypto.randomUUID(), type: 'text', value: '' }]); setImageUrl('')
     reload()
     showToast(`✅ [${CATEGORY_LABELS[category]}] 상품이 등록되었습니다!`)
   }
@@ -183,7 +185,7 @@ export default function AdminPanel() {
     setEditName(product.name)
     setEditPrice(product.price)
     setEditDescription(product.description)
-    setEditDetailContent(product.detailContent || '')
+    setEditDetailBlocks(parseDetailBlocks(product.detailContent))
     setEditImageUrl(product.imageUrl)
     setEditCategory(product.category)
   }
@@ -199,8 +201,8 @@ export default function AdminPanel() {
       name: editName.trim(),
       price: editPrice.trim(),
       description: editDescription.trim(),
-      detailContent: editDetailContent.trim(),
-      imageUrl: editImageUrl,
+      detailContent: JSON.stringify(editDetailBlocks),
+      imageUrl: editImageUrl.trim(),
     })
     setEditingProduct(null)
     reload()
@@ -532,21 +534,15 @@ export default function AdminPanel() {
 
               {/* 상세 페이지 내용 */}
               <div>
-                <label className="admin-label flex items-center gap-2 mb-2">
+                <label className="admin-label flex items-center gap-2 mb-3">
                   <AlignLeft size={14} className="text-dinoclass-spark" />
                   상세 페이지 내용
                 </label>
-                <textarea
-                  id="product-detail-content"
-                  placeholder="상세 페이지에 표시할 상품 소개, 목차, 특징 등을 자유롭게 입력하세요.&#10;&#10;줄바꿈으로 단락을 구분할 수 있습니다."
-                  value={detailContent}
-                  onChange={(e) => setDetailContent(e.target.value)}
-                  rows={6}
-                  className="admin-input resize-y min-h-[100px]"
-                />
+                <div className="bg-dinoclass-surface/20 border border-dinoclass-surface rounded-xl p-4">
+                  <DetailBlockEditor blocks={detailBlocks} onChange={setDetailBlocks} onShowToast={showToast} />
+                </div>
                 <div className="flex justify-between mt-1.5">
-                  <p className="text-[10px] text-dinoclass-textSub">고객이 '자세히 보기'를 클릭하면 볼 수 있는 상세 설명입니다.</p>
-                  <span className="text-[10px] text-dinoclass-textSub font-mono">{detailContent.length}자</span>
+                  <p className="text-[10px] text-dinoclass-textSub">텍스트와 이미지를 자유롭게 추가하여 프리미엄 상세페이지를 구성하세요.</p>
                 </div>
               </div>
 
@@ -781,12 +777,12 @@ export default function AdminPanel() {
                 <input type="text" value={editImageUrl} onChange={(e) => setEditImageUrl(e.target.value)} className="admin-input" />
               </div>
               <div>
-                <label className="admin-label flex items-center gap-2 mb-2"><AlignLeft size={14} className="text-dinoclass-spark" /> 상세 페이지 내용</label>
-                <textarea value={editDetailContent} onChange={(e) => setEditDetailContent(e.target.value)} rows={6} className="admin-input resize-y min-h-[100px]" />
+                <label className="admin-label flex items-center gap-2 mb-3"><AlignLeft size={14} className="text-dinoclass-spark" /> 상세 페이지 내용</label>
+                <DetailBlockEditor blocks={editDetailBlocks} onChange={setEditDetailBlocks} onShowToast={showToast} />
               </div>
             </div>
 
-            <div className="sticky bottom-0 bg-dinoclass-background/95 backdrop-blur-md px-6 py-4 border-t border-dinoclass-surface flex gap-3">
+            <div className="sticky bottom-0 bg-dinoclass-background/95 backdrop-blur-md px-6 py-4 border-t border-dinoclass-surface flex gap-3 z-20">
               <button onClick={() => setEditingProduct(null)} className="flex-1 py-3 rounded-xl border border-dinoclass-surface text-dinoclass-textSub font-bold hover:bg-dinoclass-surface/50 transition-all">취소</button>
               <button onClick={handleEditSave} className="flex-1 py-3 rounded-xl bg-dinoclass-spark text-black font-bold hover:bg-yellow-400 transition-all flex items-center justify-center gap-2"><Save size={16} /> 저장하기</button>
             </div>
