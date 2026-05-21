@@ -1,7 +1,7 @@
 /**
  * 클라이언트 단에서 이미지를 리사이징하고 Base64로 압축하는 유틸리티
  */
-export async function compressImage(file: File, maxWidth = 800, quality = 0.6): Promise<string> {
+export async function compressImage(file: File, maxWidth = 600, quality = 0.7): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
@@ -27,8 +27,8 @@ export async function compressImage(file: File, maxWidth = 800, quality = 0.6): 
         }
         
         ctx.drawImage(img, 0, 0, width, height);
-        // WebP 포맷으로 압축하여 품질 대비 용량 최소화
-        const dataUrl = canvas.toDataURL('image/webp', quality);
+        // JPEG 포맷으로 압축하여 품질 대비 용량 최소화 (약 30~50KB)
+        const dataUrl = canvas.toDataURL('image/jpeg', quality);
         resolve(dataUrl);
       };
       img.onerror = (error) => reject(error);

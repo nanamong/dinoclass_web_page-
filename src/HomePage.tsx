@@ -2,9 +2,10 @@ import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { 
-  Rocket, Mail, ChevronRight, CheckCircle2, ChevronDown 
+  Rocket, Mail, ChevronRight, CheckCircle2, ChevronDown, X
 } from 'lucide-react'
 import { getProducts, type Product } from './productStore'
+import { addSubscriber } from './newsletterStore'
 
 const SectionFadeIn = ({ children }: { children: React.ReactNode }) => (
   <motion.div
@@ -24,9 +25,77 @@ const defaultBooks = [
   { title: "하루 1시간, 월 100만 원 자동 수익 시스템 구축법", price: "49,000원" },
 ]
 
+function NewsletterModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  const [name, setName] = useState('')
+  const [phone, setPhone] = useState('')
+  const [email, setEmail] = useState('')
+  const [submitted, setSubmitted] = useState(false)
+
+  // 모달이 열릴 때 상태 초기화
+  useEffect(() => {
+    if (isOpen) {
+      setName(''); setPhone(''); setEmail(''); setSubmitted(false);
+    }
+  }, [isOpen])
+
+  if (!isOpen) return null;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!name.trim() || !phone.trim() || !email.trim()) return
+    addSubscriber({ name, phone, email })
+    setSubmitted(true)
+  }
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        className="relative w-full max-w-md bg-dinoclass-background border border-dinoclass-surface rounded-2xl shadow-2xl overflow-hidden"
+      >
+        <div className="px-6 py-4 border-b border-dinoclass-surface flex items-center justify-between">
+          <h3 className="font-bold text-white text-lg">무료 뉴스레터 구독하기</h3>
+          <button onClick={onClose} className="text-dinoclass-textSub hover:text-white transition-colors">
+            <X size={20} />
+          </button>
+        </div>
+        <div className="p-6">
+          {submitted ? (
+            <div className="text-center py-8">
+              <CheckCircle2 size={48} className="text-dinoclass-spark mx-auto mb-4" />
+              <h4 className="text-xl font-bold mb-2">구독이 완료되었습니다!</h4>
+              <p className="text-dinoclass-textSub">입력하신 이메일로 구글 드라이브 링크가 발송됩니다.</p>
+              <button onClick={onClose} className="mt-8 bg-dinoclass-surface text-white px-6 py-2 rounded-lg font-bold hover:bg-dinoclass-textMain transition-colors">닫기</button>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-dinoclass-textSub mb-1">이름</label>
+                <input type="text" required value={name} onChange={e => setName(e.target.value)} className="w-full bg-dinoclass-surface border border-dinoclass-surface rounded-xl px-4 py-3 focus:outline-none focus:border-dinoclass-spark transition-colors text-white" placeholder="홍길동" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-dinoclass-textSub mb-1">전화번호</label>
+                <input type="tel" required value={phone} onChange={e => setPhone(e.target.value)} className="w-full bg-dinoclass-surface border border-dinoclass-surface rounded-xl px-4 py-3 focus:outline-none focus:border-dinoclass-spark transition-colors text-white" placeholder="010-0000-0000" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-dinoclass-textSub mb-1">이메일 주소</label>
+                <input type="email" required value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-dinoclass-surface border border-dinoclass-surface rounded-xl px-4 py-3 focus:outline-none focus:border-dinoclass-spark transition-colors text-white" placeholder="example@email.com" />
+              </div>
+              <button type="submit" className="w-full bg-dinoclass-spark text-black font-bold py-4 rounded-xl mt-4 hover:bg-yellow-400 transition-colors">무료로 즉시 구독하기</button>
+            </form>
+          )}
+        </div>
+      </motion.div>
+    </div>
+  )
+}
+
 export default function HomePage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [dynamicProducts, setDynamicProducts] = useState<Product[]>([]);
+  const [showNewsletterModal, setShowNewsletterModal] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // localStorage에서 관리자가 등록한 상품을 주기적으로 읽어와 실시간 반영
@@ -44,6 +113,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-dinoclass-background text-dinoclass-textMain font-sans flex flex-col">
+      <NewsletterModal isOpen={showNewsletterModal} onClose={() => setShowNewsletterModal(false)} />
       {/* Header */}
       <header className="sticky top-0 z-50 bg-dinoclass-background/80 backdrop-blur-md border-b border-dinoclass-surface">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
@@ -93,7 +163,7 @@ export default function HomePage() {
               transition={{ delay: 0.4 }}
               className="flex justify-center"
             >
-              <button className="hover-lift flex items-center gap-3 bg-dinoclass-surface border border-dinoclass-spark/30 text-white px-8 py-4 rounded-xl text-lg font-bold shadow-[0_0_20px_rgba(254,232,0,0.15)] group">
+              <button onClick={() => setShowNewsletterModal(true)} className="hover-lift flex items-center gap-3 bg-dinoclass-surface border border-dinoclass-spark/30 text-white px-8 py-4 rounded-xl text-lg font-bold shadow-[0_0_20px_rgba(254,232,0,0.15)] group">
                 <Mail className="text-dinoclass-spark group-hover:scale-110 transition-transform" />
                 무료 뉴스레터 구독하기
                 <ChevronRight className="text-dinoclass-textSub group-hover:translate-x-1 transition-transform" />
@@ -147,7 +217,7 @@ export default function HomePage() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[1, 2, 3, 4].map((i) => (
                   <div key={i} className="hover-lift bg-dinoclass-surface rounded-2xl overflow-hidden cursor-pointer flex flex-col h-full border border-transparent hover:border-dinoclass-spark/50">
-                    <div className="h-48 bg-zinc-800 relative">
+                    <div className="aspect-square bg-zinc-800 relative">
                       <div className="absolute top-4 right-4 bg-dinoclass-spark text-black text-xs font-bold px-2 py-1 rounded">BEST</div>
                     </div>
                     <div className="p-6 flex flex-col flex-grow">
@@ -179,7 +249,7 @@ export default function HomePage() {
                 {/* 기본(하드코딩) 전자책 카드 */}
                 {defaultBooks.map((book, i) => (
                   <div key={`default-${i}`} className="hover-lift bg-dinoclass-background rounded-2xl overflow-hidden cursor-pointer flex flex-col border border-dinoclass-surface hover:border-dinoclass-spark/50">
-                    <div className="h-40 bg-zinc-800/80"></div>
+                    <div className="aspect-square bg-zinc-800/80"></div>
                     <div className="p-6 flex flex-col h-full">
                       <h3 className="font-bold text-lg mb-2 flex-grow">{book.title}</h3>
                       <div className="flex items-center justify-between mt-4">
@@ -201,7 +271,7 @@ export default function HomePage() {
                       transition={{ duration: 0.35 }}
                       className="hover-lift bg-dinoclass-background rounded-2xl overflow-hidden cursor-pointer flex flex-col border border-dinoclass-surface hover:border-dinoclass-spark/50"
                     >
-                      <div className="h-40 bg-zinc-800/80 overflow-hidden relative">
+                      <div className="aspect-square bg-zinc-800/80 overflow-hidden relative">
                         {product.imageUrl && (
                           <img
                             src={product.imageUrl}
@@ -350,7 +420,7 @@ export default function HomePage() {
                   placeholder="이메일 주소를 입력해주세요" 
                   className="flex-grow bg-dinoclass-background border border-dinoclass-textSub/30 rounded-xl px-6 py-4 outline-none focus:border-dinoclass-spark transition-colors"
                 />
-                <button className="bg-dinoclass-spark text-black font-bold px-8 py-4 rounded-xl hover:bg-yellow-400 transition-colors whitespace-nowrap">
+                <button onClick={() => setShowNewsletterModal(true)} className="bg-dinoclass-spark text-black font-bold px-8 py-4 rounded-xl hover:bg-yellow-400 transition-colors whitespace-nowrap">
                   무료 구독하기
                 </button>
               </div>

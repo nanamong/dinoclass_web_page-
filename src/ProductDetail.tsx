@@ -97,7 +97,7 @@ export default function ProductDetail() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-2xl overflow-hidden border border-dinoclass-surface bg-dinoclass-surface aspect-[4/3] flex items-center justify-center"
+          className="rounded-2xl overflow-hidden border border-dinoclass-surface bg-dinoclass-surface aspect-square object-cover flex items-center justify-center"
         >
           {product.imageUrl ? (
             <img
@@ -208,7 +208,7 @@ export default function ProductDetail() {
                   <div key={block.id}>
                     {block.type === 'text' ? (
                       <div className={`
-                        ${block.align === 'center' ? 'text-center' : 'text-left'}
+                        ${block.align === 'center' ? 'text-center' : block.align === 'right' ? 'text-right' : 'text-left'}
                         ${block.size === 'h1' ? 'text-3xl font-bold mt-8 mb-4' : 
                           block.size === 'h2' ? 'text-2xl font-bold mt-6 mb-3' : 'text-base mt-2 mb-2'}
                       `}>
@@ -216,7 +216,12 @@ export default function ProductDetail() {
                           line.trim() === ''
                             ? <div key={i} className="h-4" />
                             : <p key={i} className={`${block.size === 'p' || !block.size ? 'text-dinoclass-textMain leading-relaxed' : ''}`}>
-                                {line}
+                                <span className={`${
+                                  block.highlight === 'yellow' ? 'bg-[#FEE800]/20 text-[#FEE800] px-1 rounded' :
+                                  block.highlight === 'green' ? 'bg-[#34D399]/20 text-[#34D399] px-1 rounded' : ''
+                                }`}>
+                                  {line}
+                                </span>
                               </p>
                         ))}
                       </div>

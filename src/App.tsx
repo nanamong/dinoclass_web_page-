@@ -9,6 +9,8 @@ import ProductDetail from './ProductDetail'
 import PaymentSuccess from './PaymentSuccess'
 import CheckoutPage from './CheckoutPage'
 import CartPage from './CartPage'
+import Toast from './components/Toast'
+import NewsletterModal from './components/NewsletterModal'
 
 /* ── 섹션 페이드인 래퍼 ── */
 const SectionFadeIn = ({ children }: { children: React.ReactNode }) => (
@@ -26,7 +28,7 @@ function DynamicCard({ product }: { product: Product }) {
       onClick={() => navigate(`/products/${product.id}`)}
       className="hover-lift bg-dinoclass-background rounded-2xl overflow-hidden cursor-pointer flex flex-col border border-dinoclass-surface hover:border-dinoclass-spark/50"
     >
-      <div className="aspect-[4/3] bg-zinc-800/80 overflow-hidden relative">
+      <div className="aspect-square object-cover bg-zinc-800/80 overflow-hidden relative">
         {product.imageUrl && <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />}
         <div className="absolute top-3 left-3 bg-dinoclass-spark text-black text-[10px] font-bold px-2 py-0.5 rounded">NEW</div>
       </div>
@@ -43,7 +45,7 @@ function DynamicCard({ product }: { product: Product }) {
 }
 
 /* ── 홈 화면 컴포넌트 ── */
-function HomeContent() {
+function HomeContent({ setIsNewsletterOpen }: { setIsNewsletterOpen: (v: boolean) => void }) {
   const navigate = useNavigate()
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const [ebookProducts, setEbookProducts] = useState<Product[]>([])
@@ -77,7 +79,7 @@ function HomeContent() {
             흩어져 있는 노하우를 모아 평생 수익을 창출하는 세일즈 머신을 구축하세요.
           </motion.p>
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="flex justify-center">
-            <button className="hover-lift flex items-center gap-3 bg-dinoclass-surface border border-dinoclass-spark/30 text-white px-8 py-4 rounded-xl text-lg font-bold shadow-[0_0_20px_rgba(254,232,0,0.15)] group">
+            <button onClick={() => setIsNewsletterOpen(true)} className="hover-lift flex items-center gap-3 bg-dinoclass-surface border border-dinoclass-spark/30 text-white px-8 py-4 rounded-xl text-lg font-bold shadow-[0_0_20px_rgba(254,232,0,0.15)] group">
               <Mail className="text-dinoclass-spark group-hover:scale-110 transition-transform" />
               무료 뉴스레터 구독하기
               <ChevronRight className="text-dinoclass-textSub group-hover:translate-x-1 transition-transform" />
@@ -129,7 +131,7 @@ function HomeContent() {
                   onClick={() => navigate(`/products/static-vod-${i}`)}
                   className="hover-lift bg-dinoclass-surface rounded-2xl overflow-hidden cursor-pointer flex flex-col h-full border border-transparent hover:border-dinoclass-spark/50"
                 >
-                  <div className="aspect-[4/3] bg-zinc-800 relative">
+                  <div className="aspect-square object-cover bg-zinc-800 relative">
                     <div className="absolute top-4 right-4 bg-dinoclass-spark text-black text-xs font-bold px-2 py-1 rounded">BEST</div>
                   </div>
                   <div className="p-6 flex flex-col flex-grow">
@@ -170,7 +172,7 @@ function HomeContent() {
                   onClick={() => navigate(`/products/${book.id}`)}
                   className="hover-lift bg-dinoclass-background rounded-2xl overflow-hidden cursor-pointer flex flex-col border border-dinoclass-surface hover:border-dinoclass-spark/50"
                 >
-                  <div className="aspect-[4/3] bg-zinc-800/80" />
+                  <div className="aspect-square object-cover bg-zinc-800/80" />
                   <div className="p-6 flex flex-col h-full">
                     <h3 className="font-bold text-lg mb-2 flex-grow">{book.title}</h3>
                     <div className="flex items-center justify-between mt-4">
@@ -259,7 +261,9 @@ function HomeContent() {
             <p className="text-dinoclass-textSub text-lg mb-10 max-w-2xl mx-auto">가장 빨리 수익화하는 방법, 최신 노하우를 일주일에 한 번씩 메일로 받아보세요!</p>
             <div className="flex flex-col sm:flex-row justify-center max-w-md mx-auto gap-4">
               <input type="email" placeholder="이메일 주소를 입력해주세요" className="flex-grow bg-dinoclass-background border border-dinoclass-textSub/30 rounded-xl px-6 py-4 outline-none focus:border-dinoclass-spark transition-colors" />
-              <button className="bg-dinoclass-spark text-black font-bold px-8 py-4 rounded-xl hover:bg-yellow-400 transition-colors whitespace-nowrap">무료 구독하기</button>
+              <button onClick={() => setIsNewsletterOpen(true)} className="bg-dinoclass-surface border border-dinoclass-spark/30 text-white font-bold px-8 py-4 rounded-xl hover:bg-dinoclass-spark/10 transition-colors whitespace-nowrap">
+                무료 뉴스레터 구독하기
+              </button>
             </div>
           </div>
         </SectionFadeIn>
@@ -272,6 +276,13 @@ function HomeContent() {
 export default function App() {
   const [isAdmin, setIsAdmin] = useState(false)
   const [cartCount, setCartCount] = useState(0)
+  const [isNewsletterOpen, setIsNewsletterOpen] = useState(false)
+  const [toastMessage, setToastMessage] = useState('')
+  
+  const showToast = (msg: string) => {
+    setToastMessage(msg)
+    setTimeout(() => setToastMessage(''), 3000)
+  }
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -337,7 +348,7 @@ export default function App() {
           <AdminPanel />
         ) : (
           <Routes>
-            <Route path="/" element={<HomeContent />} />
+            <Route path="/" element={<HomeContent setIsNewsletterOpen={setIsNewsletterOpen} />} />
             <Route path="/products/:id" element={<ProductDetail />} />
             <Route path="/cart" element={<CartPage />} />
             <Route path="/checkout" element={<CheckoutPage />} />
@@ -371,6 +382,13 @@ export default function App() {
           </div>
         </div>
       </footer>
+      {/* ══════ Toast & Modals ══════ */}
+      {toastMessage && <Toast message={toastMessage} onClose={() => setToastMessage('')} />}
+      <NewsletterModal 
+        isOpen={isNewsletterOpen} 
+        onClose={() => setIsNewsletterOpen(false)} 
+        onShowToast={showToast} 
+      />
     </div>
   )
 }

@@ -2,7 +2,7 @@ import { useState, useEffect, type FormEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus, Trash2, Image, DollarSign, FileText, Package,
-  ShieldCheck, LayoutDashboard, Database, Tag, ChevronDown, AlignLeft, Pencil, X, Save
+  ShieldCheck, LayoutDashboard, Database, Tag, ChevronDown, AlignLeft, Pencil, X, Save, ShoppingBag
 } from 'lucide-react'
 import {
   getProducts, addProduct, deleteProduct, updateProduct,
@@ -10,56 +10,11 @@ import {
   type Product, type ProductCategory, type DetailBlock, parseDetailBlocks
 } from './productStore'
 import { getOrders, updateOrderStatus, deleteOrder, type Order, type OrderStatus } from './orderStore'
+import { getSubscribers, deleteSubscriber, type Subscriber } from './newsletterStore'
+import { compressImage } from './utils/imageCompressor'
 import DetailBlockEditor from './components/DetailBlockEditor'
 
 const CATEGORIES: ProductCategory[] = ['ebook', 'vod', 'freebie']
-
-/* 이미지 압축 및 Base64 변환 유틸리티 (localStorage 쿼터 초과 방지) */
-const compressImage = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.readAsDataURL(file)
-    reader.onload = (event) => {
-      const img = new window.Image()
-      img.src = event.target?.result as string
-      img.onload = () => {
-        const canvas = document.createElement('canvas')
-        const MAX_WIDTH = 600
-        const MAX_HEIGHT = 600
-        let width = img.width
-        let height = img.height
-
-        if (width > height) {
-          if (width > MAX_WIDTH) {
-            height *= MAX_WIDTH / width
-            width = MAX_WIDTH
-          }
-        } else {
-          if (height > MAX_HEIGHT) {
-            width *= MAX_HEIGHT / height
-            height = MAX_HEIGHT
-          }
-        }
-
-        canvas.width = width
-        canvas.height = height
-
-        const ctx = canvas.getContext('2d')
-        if (!ctx) {
-          resolve(event.target?.result as string)
-          return
-        }
-
-        ctx.drawImage(img, 0, 0, width, height)
-        // JPEG 품질 0.7 압축으로 용량 최적화 (30KB~50KB 내외)
-        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7)
-        resolve(compressedBase64)
-      }
-      img.onerror = (err) => reject(err)
-    }
-    reader.onerror = (err) => reject(err)
-  })
-}
 
 export default function AdminPanel() {
   /* ─── state ─── */
@@ -89,7 +44,8 @@ export default function AdminPanel() {
   const [editCategory, setEditCategory] = useState<ProductCategory>('ebook')
 
   /* ── 탭 상태 ── */
-  const [activeTab, setActiveTab] = useState<'products' | 'orders'>('products')
+  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'newsletters'>('products')
+  const [newsletters, setNewsletters] = useState<Subscriber[]>([])
   const [orders, setOrders] = useState<Order[]>([])
 
   /* ── 초기 데이터 로드 ── */
@@ -100,10 +56,15 @@ export default function AdminPanel() {
   const reloadOrders = () => {
     setOrders(getOrders())
   }
+  
+  const reloadNewsletters = () => {
+    setNewsletters(getSubscribers())
+  }
 
   useEffect(() => {
     reload()
     reloadOrders()
+    reloadNewsletters()
   }, [])
 
   /* ─── handlers ─── */
@@ -137,7 +98,6 @@ export default function AdminPanel() {
       showToast('⚠️ 이미지 파일만 업로드할 수 있습니다.')
       return
     }
-    // 최대 용량 5MB 체크 (압축 전)
     if (file.size > 5 * 1024 * 1024) {
       showToast('⚠️ 5MB 이하의 페이지만 업로드 가능합니다.')
       return
@@ -236,7 +196,6 @@ export default function AdminPanel() {
   /* ─── render ─── */
   return (
     <div className="max-w-6xl mx-auto px-6 py-10">
-      {/* Toast */}
       <AnimatePresence>
         {toast && (
           <motion.div
@@ -250,7 +209,6 @@ export default function AdminPanel() {
         )}
       </AnimatePresence>
 
-      {/* 환영 카드 */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -269,7 +227,6 @@ export default function AdminPanel() {
         </div>
       </motion.div>
 
-      {/* 탭 네비게이션 */}
       <div className="flex gap-4 mb-8 border-b border-dinoclass-surface pb-4">
         <button
           onClick={() => setActiveTab('products')}
@@ -287,11 +244,18 @@ export default function AdminPanel() {
         >
           💳 결제 내역 관리
         </button>
+        <button
+          onClick={() => { setActiveTab('newsletters'); reloadNewsletters(); }}
+          className={`px-6 py-3 rounded-xl font-bold transition-all border ${
+            activeTab === 'newsletters' ? 'bg-dinoclass-spark text-black border-dinoclass-spark' : 'text-dinoclass-textSub border-dinoclass-surface hover:bg-dinoclass-surface/50 hover:border-dinoclass-spark/50 hover:text-white'
+          }`}
+        >
+          📧 뉴스레터 구독자 관리
+        </button>
       </div>
 
       {activeTab === 'products' ? (
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-          {/* ── 좌측: 상품 등록 폼 ── */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -307,7 +271,6 @@ export default function AdminPanel() {
             </div>
 
             <form onSubmit={handleSubmit} className="p-6 space-y-5">
-              {/* 상품 종류 분류 드롭다운 */}
               <div>
                 <label className="admin-label flex items-center gap-2 mb-2">
                   <Tag size={14} className="text-dinoclass-spark" />
@@ -330,7 +293,6 @@ export default function AdminPanel() {
                 </div>
               </div>
 
-              {/* 상품명 */}
               <div>
                 <label className="admin-label flex items-center gap-2 mb-2">
                   <Package size={14} className="text-dinoclass-spark" />
@@ -346,7 +308,6 @@ export default function AdminPanel() {
                 />
               </div>
 
-              {/* 가격 */}
               <div>
                 <label className="admin-label flex items-center gap-2 mb-2">
                   <DollarSign size={14} className="text-dinoclass-spark" />
@@ -362,7 +323,6 @@ export default function AdminPanel() {
                 />
               </div>
 
-              {/* 한 줄 설명 */}
               <div>
                 <label className="admin-label flex items-center gap-2 mb-2">
                   <FileText size={14} className="text-dinoclass-spark" />
@@ -378,14 +338,12 @@ export default function AdminPanel() {
                 />
               </div>
 
-              {/* 상품 이미지 업로드 및 URL 주소 입력 */}
               <div>
                 <div className="flex justify-between items-center mb-2">
                   <label className="admin-label flex items-center gap-2">
                     <Image size={14} className="text-dinoclass-spark" />
                     상품 이미지
                   </label>
-                  {/* 토글 탭 */}
                   <div className="flex gap-1 bg-dinoclass-background/60 rounded-lg p-0.5 border border-dinoclass-surface">
                     <button
                       type="button"
@@ -413,7 +371,6 @@ export default function AdminPanel() {
                 </div>
 
                 {imageMode === 'upload' ? (
-                  /* 파일 업로드 드롭존 */
                   <div
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
@@ -445,7 +402,6 @@ export default function AdminPanel() {
                         <p className="text-xs text-dinoclass-textSub font-medium">이미지를 압축 가공 중입니다...</p>
                       </div>
                     ) : imageUrl ? (
-                      /* 업로드 성공 미리보기 */
                       <div className="w-full relative flex items-center gap-4">
                         <div className="w-20 h-20 rounded-lg overflow-hidden border border-dinoclass-surface bg-zinc-950 flex-shrink-0">
                           <img
@@ -473,7 +429,6 @@ export default function AdminPanel() {
                         </button>
                       </div>
                     ) : (
-                      /* 기본 대기 화면 */
                       <div className="flex flex-col items-center">
                         <div className="w-10 h-10 rounded-xl bg-dinoclass-surface flex items-center justify-center mb-3 text-dinoclass-textSub">
                           <svg
@@ -500,7 +455,6 @@ export default function AdminPanel() {
                     )}
                   </div>
                 ) : (
-                  /* 웹 링크 URL 입력 폼 */
                   <div className="space-y-3">
                     <input
                       id="product-image-url"
@@ -532,7 +486,6 @@ export default function AdminPanel() {
                 )}
               </div>
 
-              {/* 상세 페이지 내용 */}
               <div>
                 <label className="admin-label flex items-center gap-2 mb-3">
                   <AlignLeft size={14} className="text-dinoclass-spark" />
@@ -546,7 +499,6 @@ export default function AdminPanel() {
                 </div>
               </div>
 
-              {/* 등록 버튼 */}
               <button
                 id="submit-product"
                 type="submit"
@@ -559,7 +511,6 @@ export default function AdminPanel() {
           </div>
         </motion.div>
 
-        {/* ── 우측: DB 관리 테이블 ── */}
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -567,7 +518,6 @@ export default function AdminPanel() {
           className="lg:col-span-3"
         >
           <div className="admin-glass rounded-2xl border border-dinoclass-surface overflow-hidden">
-            {/* 테이블 헤더 + 카테고리 필터 */}
             <div className="px-6 py-5 border-b border-dinoclass-surface flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-dinoclass-spark/10 flex items-center justify-center">
@@ -578,7 +528,6 @@ export default function AdminPanel() {
                   {filteredProducts.length}개
                 </span>
               </div>
-              {/* 카테고리 필터 탭 */}
               <div className="flex gap-1 bg-dinoclass-background/60 rounded-lg p-1">
                 {(['all', ...CATEGORIES] as const).map((cat) => (
                   <button
@@ -667,68 +616,126 @@ export default function AdminPanel() {
           </div>
         </motion.div>
       </div>
-      ) : (
-        /* ── 결제 내역 관리 탭 ── */
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <div className="admin-glass rounded-2xl border border-dinoclass-surface overflow-hidden">
-            <div className="px-6 py-5 border-b border-dinoclass-surface flex items-center justify-between">
-              <h2 className="font-bold text-white text-lg flex items-center gap-2">
-                <Database className="text-dinoclass-spark" size={20} />
-                주문 내역 DB
-              </h2>
-              <span className="text-sm font-mono text-dinoclass-textSub">총 {orders.length}건</span>
-            </div>
-            {orders.length === 0 ? (
-              <div className="p-16 text-center text-dinoclass-textSub">
-                <Database size={48} className="mx-auto mb-4 opacity-20" />
-                <p>아직 결제 내역이 없습니다.</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-dinoclass-surface/30 text-dinoclass-textSub border-b border-dinoclass-surface">
-                    <tr>
-                      <th className="px-6 py-4 font-medium whitespace-nowrap">결제일시</th>
-                      <th className="px-6 py-4 font-medium whitespace-nowrap">주문번호</th>
-                      <th className="px-6 py-4 font-medium min-w-[200px]">주문명</th>
-                      <th className="px-6 py-4 font-medium whitespace-nowrap text-right">결제금액</th>
-                      <th className="px-6 py-4 font-medium whitespace-nowrap text-center">상태</th>
-                      <th className="px-6 py-4 font-medium whitespace-nowrap text-center">관리</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-dinoclass-surface">
-                    {orders.slice().reverse().map((order) => (
-                      <tr key={order.id} className="hover:bg-dinoclass-surface/20 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap text-dinoclass-textSub">
-                          {new Date(order.createdAt).toLocaleString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                        </td>
-                        <td className="px-6 py-4 font-mono text-xs text-zinc-500 whitespace-nowrap">{order.id}</td>
-                        <td className="px-6 py-4 text-white font-medium">{order.orderName}</td>
-                        <td className="px-6 py-4 text-right font-mono font-bold text-dinoclass-spark whitespace-nowrap">
-                          {order.amount.toLocaleString()}원
-                        </td>
-                        <td className="px-6 py-4 text-center whitespace-nowrap">
-                          <button
-                            onClick={() => handleOrderStatus(order.id, order.status)}
-                            className={`px-3 py-1 rounded-full text-[10px] font-bold border transition-colors ${
-                              order.status === 'SUCCESS' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20'
-                            }`}
-                          >
-                            {order.status === 'SUCCESS' ? '결제완료' : '환불/취소'}
-                          </button>
-                        </td>
-                        <td className="px-6 py-4 text-center whitespace-nowrap">
-                          <button onClick={() => handleOrderDelete(order.id)} className="p-2 text-zinc-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors" title="내역 삭제">
-                            <Trash2 size={16} />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+      ) : activeTab === 'orders' ? (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="admin-glass rounded-2xl border border-dinoclass-surface overflow-hidden"
+        >
+          <div className="px-6 py-5 border-b border-dinoclass-surface flex items-center justify-between">
+            <h2 className="font-bold text-white text-lg flex items-center gap-2">
+              <Database className="text-dinoclass-spark" size={20} />
+              주문 내역 DB
+            </h2>
+            <span className="text-sm font-mono text-dinoclass-textSub">총 {orders.length}건</span>
           </div>
+          {orders.length === 0 ? (
+            <div className="p-16 text-center text-dinoclass-textSub">
+              <Database size={48} className="mx-auto mb-4 opacity-20" />
+              <p>아직 결제 내역이 없습니다.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-dinoclass-surface/30 text-dinoclass-textSub border-b border-dinoclass-surface">
+                  <tr>
+                    <th className="px-6 py-4 font-medium whitespace-nowrap">결제일시</th>
+                    <th className="px-6 py-4 font-medium whitespace-nowrap">주문번호</th>
+                    <th className="px-6 py-4 font-medium min-w-[200px]">주문명</th>
+                    <th className="px-6 py-4 font-medium whitespace-nowrap text-right">결제금액</th>
+                    <th className="px-6 py-4 font-medium whitespace-nowrap text-center">상태</th>
+                    <th className="px-6 py-4 font-medium whitespace-nowrap text-center">관리</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-dinoclass-surface">
+                  {orders.slice().reverse().map((order) => (
+                    <tr key={order.id} className="hover:bg-dinoclass-surface/20 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap text-dinoclass-textSub">
+                        {new Date(order.createdAt).toLocaleString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      </td>
+                      <td className="px-6 py-4 font-mono text-xs text-zinc-500 whitespace-nowrap">{order.id}</td>
+                      <td className="px-6 py-4 text-white font-medium">{order.orderName}</td>
+                      <td className="px-6 py-4 text-right font-mono font-bold text-dinoclass-spark whitespace-nowrap">
+                        {order.amount.toLocaleString()}원
+                      </td>
+                      <td className="px-6 py-4 text-center whitespace-nowrap">
+                        <button
+                          onClick={() => handleOrderStatus(order.id, order.status)}
+                          className={`px-3 py-1 rounded-full text-[10px] font-bold border transition-colors ${
+                            order.status === 'SUCCESS' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20'
+                          }`}
+                        >
+                          {order.status === 'SUCCESS' ? '결제완료' : '환불/취소'}
+                        </button>
+                      </td>
+                      <td className="px-6 py-4 text-center whitespace-nowrap">
+                        <button onClick={() => handleOrderDelete(order.id)} className="p-2 text-zinc-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors" title="내역 삭제">
+                          <Trash2 size={16} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </motion.div>
+      ) : (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="admin-glass rounded-2xl border border-dinoclass-surface overflow-hidden"
+        >
+          <div className="px-6 py-5 border-b border-dinoclass-surface flex items-center justify-between">
+            <h2 className="font-bold text-white text-lg flex items-center gap-2">
+              <Database className="text-dinoclass-spark" size={20} />
+              뉴스레터 구독자 DB
+            </h2>
+            <span className="text-sm font-mono text-dinoclass-textSub">총 {newsletters.length}명</span>
+          </div>
+          {newsletters.length === 0 ? (
+            <div className="p-16 text-center text-dinoclass-textSub">
+              <Database size={48} className="mx-auto mb-4 opacity-20" />
+              <p>아직 뉴스레터 구독자가 없습니다.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-dinoclass-surface/30 text-dinoclass-textSub border-b border-dinoclass-surface">
+                  <tr>
+                    <th className="px-6 py-4 font-medium whitespace-nowrap">신청일시</th>
+                    <th className="px-6 py-4 font-medium whitespace-nowrap">이름</th>
+                    <th className="px-6 py-4 font-medium whitespace-nowrap">전화번호</th>
+                    <th className="px-6 py-4 font-medium whitespace-nowrap">이메일</th>
+                    <th className="px-6 py-4 font-medium whitespace-nowrap text-center">관리</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-dinoclass-surface">
+                  {newsletters.slice().reverse().map((sub) => (
+                    <tr key={sub.id} className="hover:bg-dinoclass-surface/20 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap text-dinoclass-textSub">
+                        {new Date(sub.createdAt).toLocaleString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      </td>
+                      <td className="px-6 py-4 text-white font-medium whitespace-nowrap">{sub.name}</td>
+                      <td className="px-6 py-4 text-white font-medium whitespace-nowrap">{sub.phone}</td>
+                      <td className="px-6 py-4 font-mono text-dinoclass-spark whitespace-nowrap">{sub.email}</td>
+                      <td className="px-6 py-4 text-center whitespace-nowrap">
+                        <button onClick={() => {
+                          if (confirm('이 구독자를 삭제하시겠습니까?')) {
+                            deleteSubscriber(sub.id)
+                            reloadNewsletters()
+                            showToast('🗑️ 구독자가 삭제되었습니다.')
+                          }
+                        }} className="p-2 text-zinc-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors" title="내역 삭제">
+                          <Trash2 size={16} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </motion.div>
       )}
 
