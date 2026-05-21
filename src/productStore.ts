@@ -12,6 +12,8 @@ export type DetailBlock = {
   id: string;
   type: 'text' | 'image';
   value: string;
+  align?: 'left' | 'center';
+  size?: 'h1' | 'h2' | 'p';
 };
 
 export function parseDetailBlocks(content?: string): DetailBlock[] {

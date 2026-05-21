@@ -207,11 +207,15 @@ export default function ProductDetail() {
                 {parseDetailBlocks(product.detailContent).map((block) => (
                   <div key={block.id}>
                     {block.type === 'text' ? (
-                      <div>
+                      <div className={`
+                        ${block.align === 'center' ? 'text-center' : 'text-left'}
+                        ${block.size === 'h1' ? 'text-3xl font-bold mt-8 mb-4' : 
+                          block.size === 'h2' ? 'text-2xl font-bold mt-6 mb-3' : 'text-base mt-2 mb-2'}
+                      `}>
                         {block.value.split('\n').map((line, i) => (
                           line.trim() === ''
                             ? <div key={i} className="h-4" />
-                            : <p key={i} className="text-dinoclass-textMain leading-relaxed mb-2 text-base">
+                            : <p key={i} className={`${block.size === 'p' || !block.size ? 'text-dinoclass-textMain leading-relaxed' : ''}`}>
                                 {line}
                               </p>
                         ))}
