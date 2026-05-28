@@ -54,14 +54,23 @@ function HomeContent({ setIsNewsletterOpen }: { setIsNewsletterOpen: (v: boolean
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => {
-    const load = () => {
-      setEbookProducts(getProductsByCategory('ebook'))
-      setVodProducts(getProductsByCategory('vod'))
-      setFreebieProducts(getProductsByCategory('freebie'))
+    let isMounted = true;
+    const load = async () => {
+      const ebooks = await getProductsByCategory('ebook')
+      const vods = await getProductsByCategory('vod')
+      const freebies = await getProductsByCategory('freebie')
+      if (isMounted) {
+        setEbookProducts(ebooks)
+        setVodProducts(vods)
+        setFreebieProducts(freebies)
+      }
     }
     load()
-    intervalRef.current = setInterval(load, 800)
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
+    intervalRef.current = setInterval(load, 2000)
+    return () => { 
+      isMounted = false
+      if (intervalRef.current) clearInterval(intervalRef.current) 
+    }
   }, [])
 
   const toggleFaq = (i: number) => setOpenFaq(openFaq === i ? null : i)
@@ -255,16 +264,42 @@ function HomeContent({ setIsNewsletterOpen }: { setIsNewsletterOpen: (v: boolean
       {/* Newsletter CTA */}
       <section className="py-24 px-6 relative overflow-hidden">
         <SectionFadeIn>
-          <div className="max-w-4xl mx-auto bg-dinoclass-surface rounded-3xl p-12 md:p-20 text-center relative z-10 border border-dinoclass-spark/20">
-            <Mail className="w-16 h-16 text-dinoclass-spark mx-auto mb-6" />
-            <h2 className="text-3xl md:text-5xl font-bold mb-6">디노클래스의 뉴스레터</h2>
-            <p className="text-dinoclass-textSub text-lg mb-10 max-w-2xl mx-auto">가장 빨리 수익화하는 방법, 최신 노하우를 일주일에 한 번씩 메일로 받아보세요!</p>
-            <div className="flex flex-col sm:flex-row justify-center max-w-md mx-auto gap-4">
-              <input type="email" placeholder="이메일 주소를 입력해주세요" className="flex-grow bg-dinoclass-background border border-dinoclass-textSub/30 rounded-xl px-6 py-4 outline-none focus:border-dinoclass-spark transition-colors" />
-              <button onClick={() => setIsNewsletterOpen(true)} className="bg-dinoclass-surface border border-dinoclass-spark/30 text-white font-bold px-8 py-4 rounded-xl hover:bg-dinoclass-spark/10 transition-colors whitespace-nowrap">
-                무료 뉴스레터 구독하기
-              </button>
+          <div className="max-w-5xl mx-auto bg-dinoclass-surface rounded-3xl overflow-hidden relative z-10 border border-dinoclass-spark/20 flex flex-col md:flex-row">
+            
+            {/* 좌측: 움직이는 메일 아이콘 영역 */}
+            <div className="w-full md:w-1/2 bg-zinc-800/30 flex items-center justify-center p-16 md:p-0 min-h-[300px]">
+              <motion.div 
+                animate={{ x: [0, 5, -2, 3, 0] }} 
+                transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+                className="relative flex items-center"
+              >
+                {/* 스피드 라인 (달려오는 효과) */}
+                <div className="absolute -left-12 flex flex-col gap-2.5">
+                  <motion.div animate={{ width: [15, 30, 15], opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 0.6 }} className="h-1.5 bg-dinoclass-textSub rounded-full" />
+                  <motion.div animate={{ width: [25, 45, 25], opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.15 }} className="h-1.5 bg-dinoclass-textSub rounded-full" />
+                  <motion.div animate={{ width: [10, 20, 10], opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.3 }} className="h-1.5 bg-dinoclass-textSub rounded-full" />
+                </div>
+                
+                <Mail className="w-24 h-24 md:w-32 md:h-32 text-dinoclass-spark drop-shadow-[0_0_15px_rgba(254,232,0,0.3)] ml-4" strokeWidth={1.5} />
+              </motion.div>
             </div>
+
+            {/* 우측: 텍스트 및 버튼 영역 */}
+            <div className="w-full md:w-1/2 p-12 md:p-16 flex flex-col justify-center text-left">
+              <h2 className="text-3xl md:text-4xl font-bold mb-6 text-white">디노클래스의 뉴스레터</h2>
+              <p className="text-dinoclass-textSub text-lg mb-10 leading-relaxed">
+                가장 빨리 수익화하는 방법, 최신 노하우를 일주일에 한 번씩 메일로 받아보세요!
+              </p>
+              <div>
+                <button 
+                  onClick={() => setIsNewsletterOpen(true)} 
+                  className="bg-dinoclass-spark text-black border border-dinoclass-spark font-bold px-8 py-4 rounded-xl hover:bg-black hover:text-dinoclass-spark hover:border-dinoclass-spark transition-colors shadow-[0_0_20px_rgba(254,232,0,0.25)]"
+                >
+                  무료 뉴스레터 구독하기
+                </button>
+              </div>
+            </div>
+
           </div>
         </SectionFadeIn>
       </section>

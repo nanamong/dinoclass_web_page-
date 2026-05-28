@@ -40,10 +40,10 @@ function NewsletterModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!name.trim() || !phone.trim() || !email.trim()) return
-    addSubscriber({ name, phone, email })
+    await addSubscriber({ name, phone, email })
     setSubmitted(true)
   }
 
@@ -98,11 +98,11 @@ export default function HomePage() {
   const [showNewsletterModal, setShowNewsletterModal] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // localStorage에서 관리자가 등록한 상품을 주기적으로 읽어와 실시간 반영
+  // Supabase에서 상품을 주기적으로 읽어와 실시간 반영
   useEffect(() => {
-    const load = () => setDynamicProducts(getProducts());
+    const load = async () => setDynamicProducts(await getProducts());
     load();
-    intervalRef.current = setInterval(load, 1000); // 1초마다 폴링
+    intervalRef.current = setInterval(load, 2000); // 2초마다 폴링
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, []);
 

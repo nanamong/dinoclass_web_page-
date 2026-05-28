@@ -29,13 +29,13 @@ export function getCartItems(): CartItem[] {
   return loadCart()
 }
 
-export function getCartProducts(): Product[] {
+export async function getCartProducts(): Promise<Product[]> {
   const cart = loadCart()
   const products: Product[] = []
-  cart.forEach(item => {
-    const p = getProductById(item.productId)
+  for (const item of cart) {
+    const p = await getProductById(item.productId)
     if (p) products.push(p)
-  })
+  }
   return products
 }
 

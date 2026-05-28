@@ -25,33 +25,36 @@ export default function PaymentSuccess() {
     if (amt) setAmount(amt)
 
     if (oid && amt) {
-      let items: Product[] = []
-      let orderName = ''
+      const processOrder = async () => {
+        let items: Product[] = []
+        let orderName = ''
 
-      if (isCart) {
-        items = getCartProducts()
-        if (items.length === 1) orderName = items[0].name
-        else if (items.length > 1) orderName = `${items[0].name} 외 ${items.length - 1}건`
-      } else if (productId) {
-        const prod = getProductById(productId)
-        if (prod) {
-          items = [prod]
-          orderName = prod.name
+        if (isCart) {
+          items = await getCartProducts()
+          if (items.length === 1) orderName = items[0].name
+          else if (items.length > 1) orderName = `${items[0].name} 외 ${items.length - 1}건`
+        } else if (productId) {
+          const prod = await getProductById(productId)
+          if (prod) {
+            items = [prod]
+            orderName = prod.name
+          }
+        }
+
+        addOrder({
+          id: oid,
+          orderName,
+          amount: Number(amt),
+          items,
+          status: 'SUCCESS',
+          createdAt: new Date().toISOString()
+        })
+
+        if (isCart) {
+          clearCart()
         }
       }
-
-      addOrder({
-        id: oid,
-        orderName,
-        amount: Number(amt),
-        items,
-        status: 'SUCCESS',
-        createdAt: new Date().toISOString()
-      })
-
-      if (isCart) {
-        clearCart()
-      }
+      processOrder();
     }
   }, [searchParams])
 

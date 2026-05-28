@@ -14,12 +14,19 @@ export default function ProductDetail() {
   useEffect(() => {
     window.scrollTo(0, 0)
     if (!id) { setNotFound(true); return }
-    const found = getProductById(id)
-    if (found) {
-      setProduct(found)
-    } else {
-      setNotFound(true)
+    
+    let isMounted = true;
+    const fetchProduct = async () => {
+      const found = await getProductById(id)
+      if (!isMounted) return;
+      if (found) {
+        setProduct(found)
+      } else {
+        setNotFound(true)
+      }
     }
+    fetchProduct();
+    return () => { isMounted = false; }
   }, [id])
 
   /* ── 결제 페이지로 이동 ── */

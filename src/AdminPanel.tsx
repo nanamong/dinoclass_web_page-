@@ -34,7 +34,7 @@ export default function AdminPanel() {
   const [isDragging, setIsDragging] = useState(false)
   const [isCompilingImage, setIsCompilingImage] = useState(false)
 
-  /* ─── 수정 모달 state ─── */
+  /* ── 수정 모달 state ── */
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [editName, setEditName] = useState('')
   const [editPrice, setEditPrice] = useState('')
@@ -43,29 +43,42 @@ export default function AdminPanel() {
   const [editImageUrl, setEditImageUrl] = useState('')
   const [editCategory, setEditCategory] = useState<ProductCategory>('ebook')
 
+  /* ── 구글 시트 연동 state ── */
+  const [showWebhookModal, setShowWebhookModal] = useState(false)
+  const [webhookUrl, setWebhookUrl] = useState('')
+
   /* ── 탭 상태 ── */
   const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'newsletters'>('products')
   const [newsletters, setNewsletters] = useState<Subscriber[]>([])
   const [orders, setOrders] = useState<Order[]>([])
 
   /* ── 초기 데이터 로드 ── */
-  const reload = () => {
-    setProducts(getProducts())
+  const reload = async () => {
+    setProducts(await getProducts())
   }
   
   const reloadOrders = () => {
     setOrders(getOrders())
   }
   
-  const reloadNewsletters = () => {
-    setNewsletters(getSubscribers())
+  const reloadNewsletters = async () => {
+    setNewsletters(await getSubscribers())
   }
 
   useEffect(() => {
     reload()
     reloadOrders()
     reloadNewsletters()
+    
+    const savedUrl = localStorage.getItem('google_sheet_webhook_url')
+    if (savedUrl) setWebhookUrl(savedUrl)
   }, [])
+
+  const handleSaveWebhook = () => {
+    localStorage.setItem('google_sheet_webhook_url', webhookUrl.trim())
+    setShowWebhookModal(false)
+    showToast('✅ 구글 시트 연동 URL이 저장되었습니다!')
+  }
 
   /* ─── handlers ─── */
   const handleDragOver = (e: React.DragEvent) => {
@@ -115,13 +128,13 @@ export default function AdminPanel() {
       setIsCompilingImage(false)
     }
   }
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     if (!name.trim() || !price.trim()) {
       showToast('⚠️ 상품명과 가격은 필수 입력입니다.')
       return
     }
-    addProduct({
+    await addProduct({
       category,
       name: name.trim(),
       price: price.trim(),
@@ -130,13 +143,13 @@ export default function AdminPanel() {
       imageUrl: imageUrl.trim(),
     })
     setName(''); setPrice(''); setDescription(''); setDetailBlocks([{ id: crypto.randomUUID(), type: 'text', value: '' }]); setImageUrl('')
-    reload()
+    await reload()
     showToast(`✅ [${CATEGORY_LABELS[category]}] 상품이 등록되었습니다!`)
   }
 
-  const handleDelete = (id: string) => {
-    deleteProduct(id)
-    reload()
+  const handleDelete = async (id: string) => {
+    await deleteProduct(id)
+    await reload()
     showToast('🗑️ 상품이 삭제되었습니다.')
   }
 
@@ -150,13 +163,13 @@ export default function AdminPanel() {
     setEditCategory(product.category)
   }
 
-  const handleEditSave = () => {
+  const handleEditSave = async () => {
     if (!editingProduct) return
     if (!editName.trim() || !editPrice.trim()) {
       showToast('⚠️ 상품명과 가격은 필수 입력입니다.')
       return
     }
-    updateProduct(editingProduct.id, {
+    await updateProduct(editingProduct.id, {
       category: editCategory,
       name: editName.trim(),
       price: editPrice.trim(),
@@ -165,7 +178,7 @@ export default function AdminPanel() {
       imageUrl: editImageUrl.trim(),
     })
     setEditingProduct(null)
-    reload()
+    await reload()
     showToast('✅ 상품이 수정되었습니다!')
   }
 
@@ -218,12 +231,18 @@ export default function AdminPanel() {
           <div className="w-12 h-12 rounded-xl bg-dinoclass-spark/10 flex items-center justify-center">
             <ShieldCheck className="text-dinoclass-spark" size={24} />
           </div>
-          <div>
+          <div className="flex-grow">
             <h1 className="text-2xl font-bold text-white">상품 등록 대시보드</h1>
             <p className="text-dinoclass-textSub text-sm">
               상품을 등록하면 카테고리에 맞는 섹션에 실시간으로 자동 진열됩니다.
             </p>
           </div>
+          <button 
+            onClick={() => setShowWebhookModal(true)}
+            className="hidden md:flex items-center gap-2 bg-green-500/10 text-green-400 border border-green-500/30 px-5 py-2.5 rounded-xl font-bold hover:bg-green-500/20 transition-all text-sm"
+          >
+            📊 구글 시트 연동하기
+          </button>
         </div>
       </motion.div>
 
@@ -720,10 +739,10 @@ export default function AdminPanel() {
                       <td className="px-6 py-4 text-white font-medium whitespace-nowrap">{sub.phone}</td>
                       <td className="px-6 py-4 font-mono text-dinoclass-spark whitespace-nowrap">{sub.email}</td>
                       <td className="px-6 py-4 text-center whitespace-nowrap">
-                        <button onClick={() => {
+                        <button onClick={async () => {
                           if (confirm('이 구독자를 삭제하시겠습니까?')) {
-                            deleteSubscriber(sub.id)
-                            reloadNewsletters()
+                            await deleteSubscriber(sub.id)
+                            await reloadNewsletters()
                             showToast('🗑️ 구독자가 삭제되었습니다.')
                           }
                         }} className="p-2 text-zinc-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors" title="내역 삭제">
@@ -793,6 +812,47 @@ export default function AdminPanel() {
               <button onClick={() => setEditingProduct(null)} className="flex-1 py-3 rounded-xl border border-dinoclass-surface text-dinoclass-textSub font-bold hover:bg-dinoclass-surface/50 transition-all">취소</button>
               <button onClick={handleEditSave} className="flex-1 py-3 rounded-xl bg-dinoclass-spark text-black font-bold hover:bg-yellow-400 transition-all flex items-center justify-center gap-2"><Save size={16} /> 저장하기</button>
             </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* ══════ 구글 시트 연동 모달 ══════ */}
+      {showWebhookModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowWebhookModal(false)} />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="relative w-full max-w-md bg-dinoclass-background border border-dinoclass-surface rounded-2xl shadow-2xl p-6"
+          >
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="font-bold text-white text-lg flex items-center gap-2">
+                📊 구글 시트 웹훅 연동
+              </h3>
+              <button onClick={() => setShowWebhookModal(false)} className="text-dinoclass-textSub hover:text-white">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <p className="text-dinoclass-textSub text-sm mb-4 leading-relaxed">
+              발급받으신 <b>Apps Script Webhook URL</b>을 아래에 입력해 주세요. 
+              설정이 완료되면 고객이 뉴스레터를 구독할 때마다 즉시 구글 스프레드시트에 실시간으로 기록됩니다.
+            </p>
+            
+            <input 
+              type="text" 
+              placeholder="https://script.google.com/macros/s/.../exec"
+              value={webhookUrl}
+              onChange={e => setWebhookUrl(e.target.value)}
+              className="w-full bg-dinoclass-surface border border-dinoclass-surface rounded-xl px-4 py-3 mb-6 focus:outline-none focus:border-dinoclass-spark transition-colors text-white text-sm"
+            />
+            
+            <button 
+              onClick={handleSaveWebhook}
+              className="w-full bg-green-500 text-white font-bold py-3 rounded-xl hover:bg-green-600 transition-all"
+            >
+              연동 저장하기
+            </button>
           </motion.div>
         </div>
       )}

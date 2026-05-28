@@ -32,13 +32,19 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     window.scrollTo(0, 0)
-    if (isCart) {
-      const cartItems = getCartProducts()
-      if (cartItems.length > 0) setCheckoutItems(cartItems)
-    } else if (productId) {
-      const found = getProductById(productId)
-      if (found) setCheckoutItems([found])
+    
+    let isMounted = true;
+    const fetchData = async () => {
+      if (isCart) {
+        const cartItems = await getCartProducts()
+        if (isMounted && cartItems.length > 0) setCheckoutItems(cartItems)
+      } else if (productId) {
+        const found = await getProductById(productId)
+        if (isMounted && found) setCheckoutItems([found])
+      }
     }
+    fetchData();
+    return () => { isMounted = false; }
   }, [productId, isCart])
 
   const totalAmount = checkoutItems.reduce((sum, item) => sum + parsePriceToNumber(item.price), 0)
