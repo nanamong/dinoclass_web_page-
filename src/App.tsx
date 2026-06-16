@@ -60,6 +60,14 @@ function HomeContent({ setIsNewsletterOpen }: { setIsNewsletterOpen: (v: boolean
   const [vodProducts, setVodProducts] = useState<Product[]>([])
   const [freebieProducts, setFreebieProducts] = useState<Product[]>([])
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [msgPhase, setMsgPhase] = useState(0) // 0: Idle, 1: Right Msg, 2: Idle, 3: Left Msg
+
+  useEffect(() => {
+    const msgInterval = setInterval(() => {
+      setMsgPhase(p => (p + 1) % 4)
+    }, 5000) // Change phase every 5 seconds
+    return () => clearInterval(msgInterval)
+  }, [])
 
   useEffect(() => {
     let isMounted = true;
@@ -83,6 +91,7 @@ function HomeContent({ setIsNewsletterOpen }: { setIsNewsletterOpen: (v: boolean
 
   const toggleFaq = (i: number) => setOpenFaq(openFaq === i ? null : i)
 
+
   return (
     <>
       {/* Hero */}
@@ -93,91 +102,147 @@ function HomeContent({ setIsNewsletterOpen }: { setIsNewsletterOpen: (v: boolean
           <spline-viewer url="https://prod.spline.design/Onqvfz8w6QhTorLz/scene.splinecode" className="block w-full h-full"></spline-viewer>
         </div>
 
-        {/* Radial Menu Buttons */}
-        <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center max-w-7xl mx-auto">
-          {/* Top Left - Gifts */}
-          <motion.a
-            href="#gifts"
-            initial={{ opacity: 0, x: -50, y: -50 }}
-            animate={{ opacity: 1, x: 0, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
-            className="glass-button pointer-events-auto absolute top-[15%] left-[10%] md:left-[20%] px-6 py-3 rounded-full hover:scale-125 transition-all duration-300 font-bold text-sm md:text-base flex items-center gap-2 group cursor-pointer"
-          >
-            <span className="text-xl group-hover:animate-bounce">🎁</span>
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-pink-500 via-orange-400 to-rose-500 animate-gradient-xy">
-              웰컴선물키트
-            </span>
-          </motion.a>
+        {/* Radial Menu Buttons & Speech Bubbles */}
+        <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center max-w-7xl mx-auto px-4 overflow-hidden md:overflow-visible">
+          <AnimatePresence mode="popLayout">
+            {/* ── Left Side Menus (Hidden when Left Bubble is active) ── */}
+            {msgPhase !== 3 && (
+              <motion.div key="left-menus" exit={{ opacity: 0, scale: 0.9 }} transition={{ duration: 0.3 }} className="absolute inset-0">
+                {/* Top Left - Gifts */}
+                <motion.a
+                  href="#gifts"
+                  initial={{ opacity: 0, x: -50, y: -50 }} animate={{ opacity: 1, x: 0, y: 0 }} transition={{ duration: 0.6, ease: "easeOut" }}
+                  className="glass-button pointer-events-auto absolute top-[15%] left-[10%] md:left-[20%] px-6 py-3 rounded-full hover:scale-125 transition-all duration-300 font-bold text-sm md:text-base flex items-center gap-2 group cursor-pointer"
+                >
+                  <span className="text-xl group-hover:animate-bounce">🎁</span>
+                  <span className="bg-clip-text text-transparent bg-gradient-to-r from-pink-500 via-orange-400 to-rose-500 animate-gradient-xy">웰컴선물키트</span>
+                </motion.a>
+                {/* Middle Left - E-book */}
+                <motion.a
+                  href="#ebook"
+                  initial={{ opacity: 0, x: -50, y: 0 }} animate={{ opacity: 1, x: 0, y: 0 }} transition={{ duration: 0.6, delay: 0.1, ease: "easeOut" }}
+                  className="glass-button pointer-events-auto absolute top-[45%] left-[5%] md:left-[10%] px-6 py-3 rounded-full hover:scale-125 transition-all duration-300 font-bold text-sm md:text-base flex items-center gap-2 group cursor-pointer"
+                >
+                  <span className="text-xl group-hover:animate-bounce">📖</span>
+                  <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-600 via-teal-500 to-green-600 animate-gradient-xy">전자책</span>
+                </motion.a>
+                {/* Bottom Left - Free Course */}
+                <motion.a
+                  href="#free-course"
+                  initial={{ opacity: 0, x: -50, y: 50 }} animate={{ opacity: 1, x: 0, y: 0 }} transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
+                  className="glass-button pointer-events-auto absolute top-[75%] left-[10%] md:left-[20%] px-6 py-3 rounded-full hover:scale-125 transition-all duration-300 font-bold text-sm md:text-base flex items-center gap-2 group cursor-pointer"
+                >
+                  <span className="text-xl group-hover:animate-bounce">🎓</span>
+                  <span className="bg-clip-text text-transparent bg-gradient-to-r from-yellow-500 via-amber-400 to-orange-500 animate-gradient-xy">무료 강의</span>
+                </motion.a>
+              </motion.div>
+            )}
 
-          {/* Top Right - VOD */}
-          <motion.a
-            href="#vod"
-            initial={{ opacity: 0, x: 50, y: -50 }}
-            animate={{ opacity: 1, x: 0, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
-            className="glass-button pointer-events-auto absolute top-[15%] right-[10%] md:right-[20%] px-6 py-3 rounded-full hover:scale-125 transition-all duration-300 font-bold text-sm md:text-base flex items-center gap-2 group cursor-pointer"
-          >
-            <span className="text-xl group-hover:animate-bounce">📺</span>
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-cyan-500 to-indigo-600 animate-gradient-xy">
-              VOD 강의
-            </span>
-          </motion.a>
+            {/* ── Right Side Menus (Hidden when Right Bubble is active) ── */}
+            {msgPhase !== 1 && (
+              <motion.div key="right-menus" exit={{ opacity: 0, scale: 0.9 }} transition={{ duration: 0.3 }} className="absolute inset-0">
+                {/* Top Right - VOD */}
+                <motion.a
+                  href="#vod"
+                  initial={{ opacity: 0, x: 50, y: -50 }} animate={{ opacity: 1, x: 0, y: 0 }} transition={{ duration: 0.6, ease: "easeOut" }}
+                  className="glass-button pointer-events-auto absolute top-[15%] right-[10%] md:right-[20%] px-6 py-3 rounded-full hover:scale-125 transition-all duration-300 font-bold text-sm md:text-base flex items-center gap-2 group cursor-pointer"
+                >
+                  <span className="text-xl group-hover:animate-bounce">📺</span>
+                  <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-cyan-500 to-indigo-600 animate-gradient-xy">VOD 강의</span>
+                </motion.a>
+                {/* Middle Right - Reviews */}
+                <motion.a
+                  href="#reviews"
+                  initial={{ opacity: 0, x: 50, y: 0 }} animate={{ opacity: 1, x: 0, y: 0 }} transition={{ duration: 0.6, delay: 0.1, ease: "easeOut" }}
+                  className="glass-button pointer-events-auto absolute top-[45%] right-[5%] md:right-[10%] px-6 py-3 rounded-full hover:scale-125 transition-all duration-300 font-bold text-sm md:text-base flex items-center gap-2 group cursor-pointer"
+                >
+                  <span className="text-xl group-hover:animate-bounce">💬</span>
+                  <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-600 via-fuchsia-500 to-violet-600 animate-gradient-xy">수강생 후기</span>
+                </motion.a>
+                {/* Bottom Right - FAQ */}
+                <motion.a
+                  href="#faq"
+                  initial={{ opacity: 0, x: 50, y: 50 }} animate={{ opacity: 1, x: 0, y: 0 }} transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
+                  className="glass-button pointer-events-auto absolute top-[75%] right-[10%] md:right-[20%] px-6 py-3 rounded-full hover:scale-125 transition-all duration-300 font-bold text-sm md:text-base flex items-center gap-2 group cursor-pointer"
+                >
+                  <span className="text-xl group-hover:animate-bounce">❓</span>
+                  <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-sky-400 to-blue-500 animate-gradient-xy">자주 묻는 질문</span>
+                </motion.a>
+              </motion.div>
+            )}
 
-          {/* Middle Left - E-book */}
-          <motion.a
-            href="#ebook"
-            initial={{ opacity: 0, x: -50, y: 0 }}
-            animate={{ opacity: 1, x: 0, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
-            className="glass-button pointer-events-auto absolute top-[45%] left-[5%] md:left-[10%] px-6 py-3 rounded-full hover:scale-125 transition-all duration-300 font-bold text-sm md:text-base flex items-center gap-2 group cursor-pointer"
-          >
-            <span className="text-xl group-hover:animate-bounce">📖</span>
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-600 via-teal-500 to-green-600 animate-gradient-xy">
-              전자책
-            </span>
-          </motion.a>
+            {/* ── Right Speech Bubble (Message 1) ── */}
+            {msgPhase === 1 && (
+              <motion.div
+                key="bubble-right"
+                initial={{ opacity: 0, scale: 0.8, x: 50 }}
+                animate={{ opacity: 1, scale: 1, x: 0 }}
+                exit={{ opacity: 0, scale: 0.8, x: 50 }}
+                transition={{ type: 'spring', bounce: 0.4 }}
+                className="absolute top-1/2 -translate-y-1/2 right-[2%] md:right-[5%] w-[280px] md:w-[380px] lg:w-[440px] py-12 px-6 md:px-10 flex items-center justify-center z-20 pointer-events-auto"
+                style={{
+                  background: 'rgba(235, 245, 255, 0.25)',
+                  backdropFilter: 'blur(20px)',
+                  WebkitBackdropFilter: 'blur(20px)',
+                  border: '1px solid rgba(255, 255, 255, 0.4)',
+                  boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.1), inset 0 0 20px rgba(255,255,255,0.2)',
+                  borderRadius: '240px 200px 260px 180px / 120px 140px 130px 160px' /* 비대칭 자연스러운 타원형 */
+                }}
+              >
+                {/* 말풍선 꼬리 (왼쪽 뾰족하게) */}
+                <div 
+                  className="absolute top-[50%] -translate-y-1/2 -left-3 w-8 h-8 -z-10" 
+                  style={{
+                    background: 'rgba(235, 245, 255, 0.25)',
+                    backdropFilter: 'blur(20px)',
+                    WebkitBackdropFilter: 'blur(20px)',
+                    borderLeft: '1px solid rgba(255, 255, 255, 0.4)',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.4)',
+                    transform: 'rotate(45deg) skew(15deg, 15deg)'
+                  }} 
+                />
+                <p className="font-['Nanum_Pen_Script'] text-2xl md:text-3xl lg:text-[34px] text-zinc-800 leading-relaxed relative z-10 text-center tracking-wide break-keep">
+                  당신의 지식을 콘텐츠로 바꾸어<br/>수익화하는 방법을 연구합니다.
+                </p>
+              </motion.div>
+            )}
 
-          {/* Middle Right - Reviews */}
-          <motion.a
-            href="#reviews"
-            initial={{ opacity: 0, x: 50, y: 0 }}
-            animate={{ opacity: 1, x: 0, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.5, ease: "easeOut" }}
-            className="glass-button pointer-events-auto absolute top-[45%] right-[5%] md:right-[10%] px-6 py-3 rounded-full hover:scale-125 transition-all duration-300 font-bold text-sm md:text-base flex items-center gap-2 group cursor-pointer"
-          >
-            <span className="text-xl group-hover:animate-bounce">💬</span>
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-600 via-fuchsia-500 to-violet-600 animate-gradient-xy">
-              수강생 후기
-            </span>
-          </motion.a>
-
-          {/* Bottom Left - Free Course */}
-          <motion.a
-            href="#free-course"
-            initial={{ opacity: 0, x: -50, y: 50 }}
-            animate={{ opacity: 1, x: 0, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.6, ease: "easeOut" }}
-            className="glass-button pointer-events-auto absolute top-[75%] left-[10%] md:left-[20%] px-6 py-3 rounded-full hover:scale-125 transition-all duration-300 font-bold text-sm md:text-base flex items-center gap-2 group cursor-pointer"
-          >
-            <span className="text-xl group-hover:animate-bounce">🎓</span>
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-yellow-500 via-amber-400 to-orange-500 animate-gradient-xy">
-              무료 강의
-            </span>
-          </motion.a>
-
-          {/* Bottom Right - FAQ */}
-          <motion.a
-            href="#faq"
-            initial={{ opacity: 0, x: 50, y: 50 }}
-            animate={{ opacity: 1, x: 0, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.7, ease: "easeOut" }}
-            className="glass-button pointer-events-auto absolute top-[75%] right-[10%] md:right-[20%] px-6 py-3 rounded-full hover:scale-125 transition-all duration-300 font-bold text-sm md:text-base flex items-center gap-2 group cursor-pointer"
-          >
-            <span className="text-xl group-hover:animate-bounce">❓</span>
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-sky-400 to-blue-500 animate-gradient-xy">
-              자주 묻는 질문
-            </span>
-          </motion.a>
+            {/* ── Left Speech Bubble (Message 2) ── */}
+            {msgPhase === 3 && (
+              <motion.div
+                key="bubble-left"
+                initial={{ opacity: 0, scale: 0.8, x: -50 }}
+                animate={{ opacity: 1, scale: 1, x: 0 }}
+                exit={{ opacity: 0, scale: 0.8, x: -50 }}
+                transition={{ type: 'spring', bounce: 0.4 }}
+                className="absolute top-1/2 -translate-y-1/2 left-[2%] md:left-[5%] w-[280px] md:w-[380px] lg:w-[440px] py-12 px-6 md:px-10 flex items-center justify-center z-20 pointer-events-auto"
+                style={{
+                  background: 'rgba(235, 245, 255, 0.25)',
+                  backdropFilter: 'blur(20px)',
+                  WebkitBackdropFilter: 'blur(20px)',
+                  border: '1px solid rgba(255, 255, 255, 0.4)',
+                  boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.1), inset 0 0 20px rgba(255,255,255,0.2)',
+                  borderRadius: '200px 240px 180px 260px / 140px 120px 160px 130px' /* 비대칭 자연스러운 타원형 */
+                }}
+              >
+                {/* 말풍선 꼬리 (오른쪽 뾰족하게) */}
+                <div 
+                  className="absolute top-[50%] -translate-y-1/2 -right-3 w-8 h-8 -z-10" 
+                  style={{
+                    background: 'rgba(235, 245, 255, 0.25)',
+                    backdropFilter: 'blur(20px)',
+                    WebkitBackdropFilter: 'blur(20px)',
+                    borderRight: '1px solid rgba(255, 255, 255, 0.4)',
+                    borderTop: '1px solid rgba(255, 255, 255, 0.4)',
+                    transform: 'rotate(45deg) skew(15deg, 15deg)'
+                  }} 
+                />
+                <p className="font-['Nanum_Pen_Script'] text-2xl md:text-3xl lg:text-[34px] text-zinc-800 leading-relaxed relative z-10 text-center tracking-wide break-keep">
+                  흩어져 있는 노하우를 모아<br/>평생 수익을 창출하는<br/>시스템을 구축하세요.
+                </p>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </section>
       {/* ── 웰컴선물키트 (freebie) ── */}
@@ -412,48 +477,47 @@ export default function App() {
   return (
     <div className="min-h-screen bg-dinoclass-background text-dinoclass-textMain font-sans flex flex-col">
       {/* ══════ Header ══════ */}
-      <header className="sticky top-0 z-50 bg-dinoclass-background/80 backdrop-blur-md border-b border-dinoclass-surface">
+      <header className="sticky top-0 z-50 bg-[#fafafa]/80 backdrop-blur-md border-b border-zinc-200">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-dinoclass-spark cursor-pointer" onClick={() => { setIsAdmin(false); window.location.href = '/' }}>
-            <Rocket size={28} />
-            <span className="text-2xl font-bold tracking-tight text-white">디노클래스</span>
+          <div className="flex items-center gap-2 cursor-pointer pt-0.5" onClick={() => { setIsAdmin(false); window.location.href = '/' }}>
+            <span className="text-xl font-bold tracking-wide text-zinc-800">디노클래스</span>
           </div>
-          <nav className="hidden md:flex items-center gap-8 text-dinoclass-textSub font-medium">
+          <nav className="hidden md:flex items-center gap-8 text-zinc-500 font-light text-[15px] -mt-0.5">
             {!isAdmin && (<>
-              <a href="/" className="hover:text-dinoclass-spark transition-colors">홈</a>
-              <a href="/#gifts" className="hover:text-dinoclass-spark transition-colors">웰컴선물키트</a>
-              <a href="/#vod" className="hover:text-dinoclass-spark transition-colors">VOD 강의</a>
-              <a href="/#ebook" className="hover:text-dinoclass-spark transition-colors">전자책</a>
-              <a href="/#reviews" className="hover:text-dinoclass-spark transition-colors">수강생 후기</a>
+              <a href="/" className="hover:text-zinc-900 transition-colors">홈</a>
+              <a href="/#gifts" className="hover:text-zinc-900 transition-colors">웰컴선물키트</a>
+              <a href="/#vod" className="hover:text-zinc-900 transition-colors">VOD 강의</a>
+              <a href="/#ebook" className="hover:text-zinc-900 transition-colors">전자책</a>
+              <a href="/#reviews" className="hover:text-zinc-900 transition-colors">수강생 후기</a>
             </>)}
           </nav>
-          <div className="flex gap-3 items-center">
+          <div className="flex gap-2 items-center -mt-0.5">
             {!isAdmin && (<>
-              <button className="text-dinoclass-textSub hover:text-white transition-colors text-sm">로그인</button>
-              <button className="bg-dinoclass-spark text-black px-5 py-2 rounded-lg font-bold hover:bg-yellow-400 transition-colors text-sm">마이페이지</button>
               <button 
                 onClick={() => navigate('/cart')}
-                className="relative p-2 text-dinoclass-textSub hover:text-white transition-colors"
+                className="relative p-1.5 text-zinc-500 hover:text-zinc-900 transition-colors"
               >
-                <ShoppingCart size={24} />
+                <ShoppingCart size={20} />
                 {cartCount > 0 && (
                   <span className="absolute top-0 right-0 bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center translate-x-1 -translate-y-1">
                     {cartCount}
                   </span>
                 )}
               </button>
+              <button className="text-zinc-500 hover:text-zinc-900 transition-colors text-sm px-2">로그인</button>
+              <button className="border border-zinc-200 text-zinc-700 bg-white/50 backdrop-blur-sm px-4 py-1.5 rounded-full font-medium hover:bg-white hover:shadow-sm hover:border-zinc-300 transition-all text-sm">마이페이지</button>
             </>)}
             <button
               id="admin-toggle"
               onClick={() => setIsAdmin(!isAdmin)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px] font-medium transition-all ${
                 isAdmin
-                  ? 'bg-dinoclass-spark text-black shadow-[0_0_16px_rgba(254,232,0,0.3)]'
-                  : 'bg-dinoclass-surface text-dinoclass-textSub border border-dinoclass-surface hover:border-dinoclass-spark/40 hover:text-white'
+                  ? 'bg-zinc-800 text-white shadow-md'
+                  : 'bg-transparent text-zinc-400 border border-zinc-200 hover:border-zinc-300 hover:text-zinc-700'
               }`}
             >
-              <Wrench size={15} />
-              🛠️ 관리자 모드
+              <Wrench size={13} />
+              <span className="hidden sm:inline">관리자 모드</span>
             </button>
           </div>
         </div>
