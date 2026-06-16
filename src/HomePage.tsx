@@ -7,6 +7,8 @@ import {
 import { getProducts, type Product } from './productStore'
 import { addSubscriber } from './newsletterStore'
 
+import Spline from '@splinetool/react-spline';
+
 const SectionFadeIn = ({ children }: { children: React.ReactNode }) => (
   <motion.div
     initial={{ opacity: 0, y: 40 }}
@@ -83,7 +85,7 @@ function NewsletterModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
                 <label className="block text-sm font-medium text-dinoclass-textSub mb-1">이메일 주소</label>
                 <input type="email" required value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-dinoclass-surface border border-dinoclass-surface rounded-xl px-4 py-3 focus:outline-none focus:border-dinoclass-spark transition-colors text-white" placeholder="example@email.com" />
               </div>
-              <button type="submit" className="w-full bg-dinoclass-spark text-black font-bold py-4 rounded-xl mt-4 hover:bg-yellow-400 transition-colors">무료로 즉시 구독하기</button>
+              <button type="submit" className="w-full bg-dinoclass-spark text-white font-bold py-4 rounded-xl mt-4 hover:bg-purple-500 transition-colors">무료로 즉시 구독하기</button>
             </form>
           )}
         </div>
@@ -119,7 +121,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-2 text-dinoclass-spark">
             <Rocket size={28} />
-            <span className="text-2xl font-bold tracking-tight text-white">디노클래스</span>
+            <span className="text-2xl font-bold tracking-tight text-dinoclass-textMain">디노클래스</span>
           </div>
           <nav className="hidden md:flex items-center gap-8 text-dinoclass-textSub font-medium">
             <a href="#" className="hover:text-dinoclass-spark transition-colors">홈</a>
@@ -129,8 +131,8 @@ export default function HomePage() {
             <a href="#reviews" className="hover:text-dinoclass-spark transition-colors">수강생 후기</a>
           </nav>
           <div className="flex gap-4">
-            <button className="text-dinoclass-textSub hover:text-white transition-colors">로그인</button>
-            <button className="bg-dinoclass-spark text-black px-5 py-2 rounded-lg font-bold hover:bg-yellow-400 transition-colors">
+            <button className="text-dinoclass-textSub hover:text-dinoclass-textMain transition-colors">로그인</button>
+            <button className="bg-dinoclass-spark text-white px-5 py-2 rounded-lg font-bold hover:bg-purple-500 transition-colors">
               마이페이지
             </button>
           </div>
@@ -139,21 +141,27 @@ export default function HomePage() {
 
       <main className="flex-grow">
         {/* Hero Section */}
-        <section className="relative pt-32 pb-40 px-6 overflow-hidden">
-          <div className="max-w-4xl mx-auto text-center relative z-10">
+        <section className="relative w-full h-screen min-h-[700px] flex items-center justify-center overflow-hidden">
+          {/* Spline Background */}
+          <spline-viewer 
+            url="https://prod.spline.design/bat8fGdR4ZwCMV82/scene.splinecode"
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 0 }}
+          ></spline-viewer>
+          
+          <div className="max-w-4xl mx-auto text-center relative z-10 pointer-events-none mt-20 px-6">
             <motion.h1 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-5xl md:text-7xl font-bold leading-tight mb-8"
+              className="text-5xl md:text-7xl font-bold leading-tight mb-8 text-black"
             >
               당신의 지식을 콘텐츠로 바꾸어 <br className="hidden md:block"/>
-              <span className="text-dinoclass-spark">수익화하는 방법을 연구합니다.</span>
+              <span className="text-dinoclass-spark drop-shadow-sm">수익화하는 방법을 연구합니다.</span>
             </motion.h1>
             <motion.p 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="text-xl text-dinoclass-textSub mb-12 max-w-2xl mx-auto"
+              className="text-xl text-zinc-600 mb-12 max-w-2xl mx-auto"
             >
               흩어져 있는 노하우를 모아 평생 수익을 창출하는 세일즈 머신을 구축하세요.
             </motion.p>
@@ -161,18 +169,15 @@ export default function HomePage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
-              className="flex justify-center"
+              className="flex justify-center pointer-events-auto"
             >
-              <button onClick={() => setShowNewsletterModal(true)} className="hover-lift flex items-center gap-3 bg-dinoclass-surface border border-dinoclass-spark/30 text-white px-8 py-4 rounded-xl text-lg font-bold shadow-[0_0_20px_rgba(254,232,0,0.15)] group">
+              <button onClick={() => setShowNewsletterModal(true)} className="hover-lift flex items-center justify-center gap-3 bg-white/80 backdrop-blur-md border border-zinc-200 text-black px-8 py-4 rounded-xl text-lg font-bold shadow-[0_4px_20px_rgba(0,0,0,0.05)] group min-w-[300px]">
                 <Mail className="text-dinoclass-spark group-hover:scale-110 transition-transform" />
-                무료 뉴스레터 구독하기
-                <ChevronRight className="text-dinoclass-textSub group-hover:translate-x-1 transition-transform" />
+                <span className="text-black">무료 뉴스레터 구독하기</span>
+                <ChevronRight className="text-zinc-400 group-hover:translate-x-1 transition-transform" />
               </button>
             </motion.div>
           </div>
-          
-          {/* Decorative background elements */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-dinoclass-spark/5 blur-[120px] rounded-full pointer-events-none"></div>
         </section>
 
         {/* Welcome Gifts Section */}
@@ -218,7 +223,7 @@ export default function HomePage() {
                 {[1, 2, 3, 4].map((i) => (
                   <div key={i} className="hover-lift bg-dinoclass-surface rounded-2xl overflow-hidden cursor-pointer flex flex-col h-full border border-transparent hover:border-dinoclass-spark/50">
                     <div className="aspect-square bg-zinc-800 relative">
-                      <div className="absolute top-4 right-4 bg-dinoclass-spark text-black text-xs font-bold px-2 py-1 rounded">BEST</div>
+                      <div className="absolute top-4 right-4 bg-dinoclass-spark text-white text-xs font-bold px-2 py-1 rounded">BEST</div>
                     </div>
                     <div className="p-6 flex flex-col flex-grow">
                       <h3 className="font-bold text-lg mb-2">지식 창업 올인원 마스터 클래스 {i}기</h3>
@@ -280,7 +285,7 @@ export default function HomePage() {
                             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                           />
                         )}
-                        <div className="absolute top-3 left-3 bg-dinoclass-spark text-black text-[10px] font-bold px-2 py-0.5 rounded">NEW</div>
+                        <div className="absolute top-3 left-3 bg-dinoclass-spark text-white text-[10px] font-bold px-2 py-0.5 rounded">NEW</div>
                       </div>
                       <div className="p-6 flex flex-col h-full">
                         <h3 className="font-bold text-lg mb-1 flex-grow">{product.name}</h3>
@@ -420,7 +425,7 @@ export default function HomePage() {
                   placeholder="이메일 주소를 입력해주세요" 
                   className="flex-grow bg-dinoclass-background border border-dinoclass-textSub/30 rounded-xl px-6 py-4 outline-none focus:border-dinoclass-spark transition-colors"
                 />
-                <button onClick={() => setShowNewsletterModal(true)} className="bg-dinoclass-spark text-black font-bold px-8 py-4 rounded-xl hover:bg-yellow-400 transition-colors whitespace-nowrap">
+                <button onClick={() => setShowNewsletterModal(true)} className="bg-dinoclass-spark text-white font-bold px-8 py-4 rounded-xl hover:bg-purple-500 transition-colors whitespace-nowrap">
                   무료 구독하기
                 </button>
               </div>

@@ -12,6 +12,14 @@ import CartPage from './CartPage'
 import Toast from './components/Toast'
 import NewsletterModal from './components/NewsletterModal'
 
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'spline-viewer': any;
+    }
+  }
+}
+
 /* ── 섹션 페이드인 래퍼 ── */
 const SectionFadeIn = ({ children }: { children: React.ReactNode }) => (
   <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.6 }}>
@@ -78,26 +86,100 @@ function HomeContent({ setIsNewsletterOpen }: { setIsNewsletterOpen: (v: boolean
   return (
     <>
       {/* Hero */}
-      <section className="relative pt-32 pb-40 px-6 overflow-hidden">
-        <div className="max-w-4xl mx-auto text-center relative z-10">
-          <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-5xl md:text-7xl font-bold leading-tight mb-8">
-            당신의 지식을 콘텐츠로 바꾸어 <br className="hidden md:block"/>
-            <span className="text-dinoclass-spark">수익화하는 방법을 연구합니다.</span>
-          </motion.h1>
-          <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="text-xl text-dinoclass-textSub mb-12 max-w-2xl mx-auto">
-            흩어져 있는 노하우를 모아 평생 수익을 창출하는 세일즈 머신을 구축하세요.
-          </motion.p>
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="flex justify-center">
-            <button onClick={() => setIsNewsletterOpen(true)} className="hover-lift flex items-center gap-3 bg-dinoclass-surface border border-dinoclass-spark/30 text-white px-8 py-4 rounded-xl text-lg font-bold shadow-[0_0_20px_rgba(254,232,0,0.15)] group">
-              <Mail className="text-dinoclass-spark group-hover:scale-110 transition-transform" />
-              무료 뉴스레터 구독하기
-              <ChevronRight className="text-dinoclass-textSub group-hover:translate-x-1 transition-transform" />
-            </button>
-          </motion.div>
+      <section className="w-full h-[80vh] relative overflow-hidden flex items-center justify-center bg-[#fafafa]">
+        
+        {/* Spline 3D Robot (Taller than section to clip the logo at the bottom, but centered vertically) */}
+        <div className="absolute top-1/2 left-0 w-full h-[100vh] -translate-y-1/2 z-0">
+          <spline-viewer url="https://prod.spline.design/Onqvfz8w6QhTorLz/scene.splinecode" className="block w-full h-full"></spline-viewer>
         </div>
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-dinoclass-spark/5 blur-[120px] rounded-full pointer-events-none" />
-      </section>
 
+        {/* Radial Menu Buttons */}
+        <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center max-w-7xl mx-auto">
+          {/* Top Left - Gifts */}
+          <motion.a
+            href="#gifts"
+            initial={{ opacity: 0, x: -50, y: -50 }}
+            animate={{ opacity: 1, x: 0, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
+            className="glass-button pointer-events-auto absolute top-[15%] left-[10%] md:left-[20%] px-6 py-3 rounded-full hover:scale-125 transition-all duration-300 font-bold text-sm md:text-base flex items-center gap-2 group cursor-pointer"
+          >
+            <span className="text-xl group-hover:animate-bounce">🎁</span>
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-pink-500 via-orange-400 to-rose-500 animate-gradient-xy">
+              웰컴선물키트
+            </span>
+          </motion.a>
+
+          {/* Top Right - VOD */}
+          <motion.a
+            href="#vod"
+            initial={{ opacity: 0, x: 50, y: -50 }}
+            animate={{ opacity: 1, x: 0, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
+            className="glass-button pointer-events-auto absolute top-[15%] right-[10%] md:right-[20%] px-6 py-3 rounded-full hover:scale-125 transition-all duration-300 font-bold text-sm md:text-base flex items-center gap-2 group cursor-pointer"
+          >
+            <span className="text-xl group-hover:animate-bounce">📺</span>
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-cyan-500 to-indigo-600 animate-gradient-xy">
+              VOD 강의
+            </span>
+          </motion.a>
+
+          {/* Middle Left - E-book */}
+          <motion.a
+            href="#ebook"
+            initial={{ opacity: 0, x: -50, y: 0 }}
+            animate={{ opacity: 1, x: 0, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
+            className="glass-button pointer-events-auto absolute top-[45%] left-[5%] md:left-[10%] px-6 py-3 rounded-full hover:scale-125 transition-all duration-300 font-bold text-sm md:text-base flex items-center gap-2 group cursor-pointer"
+          >
+            <span className="text-xl group-hover:animate-bounce">📖</span>
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-600 via-teal-500 to-green-600 animate-gradient-xy">
+              전자책
+            </span>
+          </motion.a>
+
+          {/* Middle Right - Reviews */}
+          <motion.a
+            href="#reviews"
+            initial={{ opacity: 0, x: 50, y: 0 }}
+            animate={{ opacity: 1, x: 0, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.5, ease: "easeOut" }}
+            className="glass-button pointer-events-auto absolute top-[45%] right-[5%] md:right-[10%] px-6 py-3 rounded-full hover:scale-125 transition-all duration-300 font-bold text-sm md:text-base flex items-center gap-2 group cursor-pointer"
+          >
+            <span className="text-xl group-hover:animate-bounce">💬</span>
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-600 via-fuchsia-500 to-violet-600 animate-gradient-xy">
+              수강생 후기
+            </span>
+          </motion.a>
+
+          {/* Bottom Left - Free Course */}
+          <motion.a
+            href="#free-course"
+            initial={{ opacity: 0, x: -50, y: 50 }}
+            animate={{ opacity: 1, x: 0, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.6, ease: "easeOut" }}
+            className="glass-button pointer-events-auto absolute top-[75%] left-[10%] md:left-[20%] px-6 py-3 rounded-full hover:scale-125 transition-all duration-300 font-bold text-sm md:text-base flex items-center gap-2 group cursor-pointer"
+          >
+            <span className="text-xl group-hover:animate-bounce">🎓</span>
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-yellow-500 via-amber-400 to-orange-500 animate-gradient-xy">
+              무료 강의
+            </span>
+          </motion.a>
+
+          {/* Bottom Right - FAQ */}
+          <motion.a
+            href="#faq"
+            initial={{ opacity: 0, x: 50, y: 50 }}
+            animate={{ opacity: 1, x: 0, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.7, ease: "easeOut" }}
+            className="glass-button pointer-events-auto absolute top-[75%] right-[10%] md:right-[20%] px-6 py-3 rounded-full hover:scale-125 transition-all duration-300 font-bold text-sm md:text-base flex items-center gap-2 group cursor-pointer"
+          >
+            <span className="text-xl group-hover:animate-bounce">❓</span>
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-sky-400 to-blue-500 animate-gradient-xy">
+              자주 묻는 질문
+            </span>
+          </motion.a>
+        </div>
+      </section>
       {/* ── 웰컴선물키트 (freebie) ── */}
       <section id="gifts" className="py-24 bg-dinoclass-surface/50 border-y border-dinoclass-surface">
         <div className="max-w-7xl mx-auto px-6">

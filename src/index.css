@@ -2,11 +2,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&display=swap');
 @import "tailwindcss";
 @theme {
-  --color-dinoclass-spark: #fee800;
-  --color-dinoclass-background: #09090b;
-  --color-dinoclass-surface: #18181b;
-  --color-dinoclass-textMain: #f4f4f5;
-  --color-dinoclass-textSub: #a1a1aa;
+  --color-dinoclass-spark: #8b5cf6;
+  --color-dinoclass-background: #fafafa;
+  --color-dinoclass-surface: #ffffff;
+  --color-dinoclass-textMain: #09090b;
+  --color-dinoclass-textSub: #52525b;
   
   --font-sans: "Pretendard", sans-serif;
   --font-mono: "Chakra Petch", monospace;
@@ -19,11 +19,46 @@ body {
 }
 
 .hover-lift {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  @apply transition-all duration-300 hover:-translate-y-2 hover:shadow-xl;
 }
-.hover-lift:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 10px 25px -5px rgba(254, 232, 0, 0.1), 0 8px 10px -6px rgba(254, 232, 0, 0.1);
+
+@keyframes gradient-xy {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-gradient-xy {
+  background-size: 200% 200%;
+  animation: gradient-xy 4s ease infinite;
+}
+
+/* Premium 3D Glass Button */
+.glass-button {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-top: 1px solid rgba(255, 255, 255, 0.7);
+  border-left: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 
+    0 8px 32px 0 rgba(0, 0, 0, 0.05),
+    inset 0 4px 6px rgba(255, 255, 255, 0.5),
+    inset 0 -4px 6px rgba(0, 0, 0, 0.02);
+}
+
+.glass-button:hover {
+  background: rgba(255, 255, 255, 0.25);
+  box-shadow: 
+    0 12px 40px 0 rgba(0, 0, 0, 0.1),
+    inset 0 4px 8px rgba(255, 255, 255, 0.7),
+    inset 0 -4px 6px rgba(0, 0, 0, 0.02);
 }
 
 .marquee-container {
@@ -69,8 +104,8 @@ body {
   color: #52525b;
 }
 .admin-input:focus {
-  border-color: #fee800;
-  box-shadow: 0 0 0 3px rgba(254, 232, 0, 0.08);
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
 }
 
 .admin-label {
@@ -106,8 +141,8 @@ body {
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 .admin-select:focus {
-  border-color: #fee800;
-  box-shadow: 0 0 0 3px rgba(254, 232, 0, 0.08);
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
 }
 .admin-select option {
   background-color: #18181b;
