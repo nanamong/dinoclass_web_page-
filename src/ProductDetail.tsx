@@ -4,6 +4,8 @@ import { motion } from 'framer-motion'
 import { ArrowLeft, ShoppingCart, Rocket, Tag } from 'lucide-react'
 import { getProductById, CATEGORY_LABELS, type Product, parseDetailBlocks } from './productStore'
 import { addToCart } from './cartStore'
+import { useAuthStore } from './authStore'
+import { useMyCourseStore } from './myCourseStore'
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>()
@@ -40,6 +42,34 @@ export default function ProductDetail() {
     if (!product) return
     navigate(`/checkout?productId=${product.id}`)
   }
+
+  /* ── 0원 상품 무료 수강 (결제 우회) ── */
+  const user = useAuthStore((state) => state.user)
+  const login = useAuthStore((state) => state.login)
+  const enroll = useMyCourseStore((state) => state.enroll)
+  const hasEnrolled = useMyCourseStore((state) => state.hasEnrolled)
+
+  const handleFreeEnroll = () => {
+    if (!product) return
+    if (hasEnrolled(product.id)) {
+      alert('이미 수강 중인 강의입니다. 마이페이지로 이동합니다.')
+      navigate('/mypage')
+      return
+    }
+
+    if (!user) {
+      const email = window.prompt('수강 신청을 위해 이메일을 입력해주세요. (데모용 임시 로그인)')
+      if (!email) return
+      const name = window.prompt('성함을 입력해주세요.') || '수강생'
+      login(email, name)
+    }
+
+    enroll(product)
+    alert('수강 신청이 완료되었습니다! 마이페이지로 이동합니다.')
+    navigate('/mypage')
+  }
+
+  const isFree = product?.price === '0원' || product?.price === '0' || product?.price === '무료'
 
   /* ── 장바구니 담기 ── */
   const handleAddToCart = () => {
@@ -126,7 +156,7 @@ export default function ProductDetail() {
         initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
         onClick={() => navigate('/')}
-        className="flex items-center gap-2 text-dinoclass-textSub hover:text-white transition-colors mb-8 group"
+        className="flex items-center gap-2 text-dinoclass-textSub hover:text-zinc-900 transition-colors mb-8 group"
       >
         <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
         <span className="text-sm font-medium">뒤로가기</span>
@@ -200,18 +230,29 @@ export default function ProductDetail() {
 
           {/* CTA 버튼 */}
           <div className="flex flex-col sm:flex-row gap-3">
-            <button
-              onClick={handlePayment}
-              className="flex-1 flex items-center justify-center gap-3 bg-dinoclass-spark text-black font-bold py-4 px-8 rounded-xl text-lg hover:bg-yellow-400 transition-all hover:shadow-[0_0_24px_rgba(254,232,0,0.25)] active:scale-[0.98]"
-            >
-              <ShoppingCart size={20} /> 구매하기
-            </button>
-            <button 
-              onClick={handleAddToCart}
-              className="flex items-center justify-center gap-2 bg-dinoclass-surface border border-dinoclass-surface text-white font-bold py-4 px-6 rounded-xl hover:border-dinoclass-spark/40 transition-all"
-            >
-              장바구니 담기
-            </button>
+            {isFree ? (
+              <button
+                onClick={handleFreeEnroll}
+                className="flex-1 flex items-center justify-center gap-3 bg-dinoclass-spark text-black font-bold py-4 px-8 rounded-xl text-lg hover:bg-yellow-400 transition-all hover:shadow-[0_0_24px_rgba(254,232,0,0.25)] active:scale-[0.98]"
+              >
+                <Rocket size={20} /> 무료로 수강하기
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={handlePayment}
+                  className="flex-1 flex items-center justify-center gap-3 bg-dinoclass-spark text-black font-bold py-4 px-8 rounded-xl text-lg hover:bg-yellow-400 transition-all hover:shadow-[0_0_24px_rgba(254,232,0,0.25)] active:scale-[0.98]"
+                >
+                  <ShoppingCart size={20} /> 구매하기
+                </button>
+                <button 
+                  onClick={handleAddToCart}
+                  className="flex items-center justify-center gap-2 bg-white border-2 border-zinc-200 text-black font-bold py-4 px-8 rounded-xl hover:border-dinoclass-spark hover:bg-zinc-50 transition-all"
+                >
+                  장바구니 담기
+                </button>
+              </>
+            )}
           </div>
 
           {/* 안내 */}

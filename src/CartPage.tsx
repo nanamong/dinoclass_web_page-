@@ -17,12 +17,13 @@ export default function CartPage() {
 
   useEffect(() => {
     window.scrollTo(0, 0)
-    setCartItems(getCartProds())
+    getCartProds().then(setCartItems)
   }, [])
 
-  const handleRemove = (id: string) => {
+  const handleRemove = async (id: string) => {
     removeCartItem(id)
-    setCartItems(getCartProds())
+    const prods = await getCartProds()
+    setCartItems(prods)
   }
 
   const handleCheckout = () => {

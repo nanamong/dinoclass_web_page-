@@ -2,7 +2,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=Nanum+Pen+Script&display=swap');
 @import "tailwindcss";
 @theme {
-  --color-dinoclass-spark: #8b5cf6;
+  --color-dinoclass-spark: #5ae0e2;
   --color-dinoclass-background: #fafafa;
   --color-dinoclass-surface: #ffffff;
   --color-dinoclass-textMain: #09090b;
@@ -104,8 +104,8 @@ body {
   color: #52525b;
 }
 .admin-input:focus {
-  border-color: #8b5cf6;
-  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+  border-color: #5ae0e2;
+  box-shadow: 0 0 0 3px rgba(90, 224, 226, 0.15);
 }
 
 .admin-label {
@@ -141,8 +141,8 @@ body {
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 .admin-select:focus {
-  border-color: #8b5cf6;
-  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+  border-color: #5ae0e2;
+  box-shadow: 0 0 0 3px rgba(90, 224, 226, 0.15);
 }
 .admin-select option {
   background-color: #18181b;
@@ -177,4 +177,9 @@ body {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* ── Premium Grey Section Background ── */
+.bg-premium-grey {
+  background: linear-gradient(to top, #bcbcbc 0%, #fafafa 100%);
 }

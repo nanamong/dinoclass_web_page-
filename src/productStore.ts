@@ -38,6 +38,7 @@ export interface Product {
   description: string;
   detailContent?: string;
   imageUrl: string;
+  videoUrl?: string;
   createdAt: string;
 }
 
@@ -50,6 +51,7 @@ function mapRowToProduct(row: any): Product {
     description: row.description,
     detailContent: row.detail_content,
     imageUrl: row.image_url,
+    videoUrl: row.video_url,
     createdAt: row.created_at,
   };
 }
@@ -77,6 +79,29 @@ export async function getProductsByCategory(category: ProductCategory): Promise<
 }
 
 export async function getProductById(id: string): Promise<Product | undefined> {
+  // 더미 상품(static) 클릭 시 가상의 상품 데이터를 반환하여 오류 화면 방지
+  if (id.startsWith('static-')) {
+    const isVod = id.includes('vod');
+    const isEbook = id.includes('ebook');
+    const numMatch = id.match(/\d+/);
+    const num = numMatch ? numMatch[0] : '1';
+    
+    return {
+      id,
+      category: isVod ? 'vod' : isEbook ? 'ebook' : 'freebie',
+      name: isVod ? `지식 창업 올인원 마스터 클래스 ${num}기` : isEbook ? '전자책 및 템플릿 샘플' : '[무료] 디노클래스 맛보기 특강',
+      price: isVod ? '199,000원' : isEbook ? '29,000원' : '0원',
+      description: '본 상품은 예시로 제공되는 더미 상품입니다. 관리자 페이지에서 실제 상품을 등록하시면 이 더미 상품들은 자동으로 사라집니다.',
+      detailContent: JSON.stringify([
+        { id: '1', type: 'text', size: 'h2', align: 'center', value: '이곳은 예시용 상세 페이지입니다.' },
+        { id: '2', type: 'text', size: 'p', align: 'center', value: '관리자 페이지에 접속하여 대표님만의 찐 상품을 직접 등록해 보세요! 상품을 등록하는 즉시 메인 화면에 예쁘게 노출됩니다.' }
+      ]),
+      imageUrl: isVod ? `/vod_dummy_${num}.png` : '',
+      videoUrl: isVod || !isEbook ? 'https://player.vimeo.com/video/100000000' : undefined, // 예시용 Vimeo 링크
+      createdAt: new Date().toISOString()
+    };
+  }
+
   try {
     const { data, error } = await supabase
       .from('products')
@@ -84,7 +109,12 @@ export async function getProductById(id: string): Promise<Product | undefined> {
       .eq('id', id)
       .single();
 
-    if (error) throw error;
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return undefined; // Data not found
+      }
+      throw error;
+    }
     if (!data) return undefined;
     return mapRowToProduct(data);
   } catch (error) {
@@ -105,7 +135,8 @@ export async function addProduct(
         price: product.price,
         description: product.description,
         detail_content: product.detailContent,
-        image_url: product.imageUrl
+        image_url: product.imageUrl,
+        video_url: product.videoUrl
       }])
       .select()
       .single();
@@ -130,6 +161,7 @@ export async function updateProduct(
     if (updates.description !== undefined) dbUpdates.description = updates.description;
     if (updates.detailContent !== undefined) dbUpdates.detail_content = updates.detailContent;
     if (updates.imageUrl !== undefined) dbUpdates.image_url = updates.imageUrl;
+    if (updates.videoUrl !== undefined) dbUpdates.video_url = updates.videoUrl;
 
     const { data, error } = await supabase
       .from('products')

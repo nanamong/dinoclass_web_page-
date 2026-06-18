@@ -23,6 +23,7 @@ export default function AdminPanel() {
   const [name, setName] = useState('')
   const [price, setPrice] = useState('')
   const [description, setDescription] = useState('')
+  const [videoUrl, setVideoUrl] = useState('')
   /* ─── 에디터 state ─── */
   const [detailBlocks, setDetailBlocks] = useState<DetailBlock[]>([{ id: crypto.randomUUID(), type: 'text', value: '' }])
   const [imageUrl, setImageUrl] = useState('')
@@ -41,6 +42,7 @@ export default function AdminPanel() {
   const [editDescription, setEditDescription] = useState('')
   const [editDetailBlocks, setEditDetailBlocks] = useState<DetailBlock[]>([])
   const [editImageUrl, setEditImageUrl] = useState('')
+  const [editVideoUrl, setEditVideoUrl] = useState('')
   const [editCategory, setEditCategory] = useState<ProductCategory>('ebook')
 
   /* ── 구글 시트 연동 state ── */
@@ -141,8 +143,9 @@ export default function AdminPanel() {
       description: description.trim(),
       detailContent: JSON.stringify(detailBlocks),
       imageUrl: imageUrl.trim(),
+      videoUrl: videoUrl.trim(),
     })
-    setName(''); setPrice(''); setDescription(''); setDetailBlocks([{ id: crypto.randomUUID(), type: 'text', value: '' }]); setImageUrl('')
+    setName(''); setPrice(''); setDescription(''); setVideoUrl(''); setDetailBlocks([{ id: crypto.randomUUID(), type: 'text', value: '' }]); setImageUrl('')
     await reload()
     showToast(`✅ [${CATEGORY_LABELS[category]}] 상품이 등록되었습니다!`)
   }
@@ -160,6 +163,7 @@ export default function AdminPanel() {
     setEditDescription(product.description)
     setEditDetailBlocks(parseDetailBlocks(product.detailContent))
     setEditImageUrl(product.imageUrl)
+    setEditVideoUrl(product.videoUrl || '')
     setEditCategory(product.category)
   }
 
@@ -176,6 +180,7 @@ export default function AdminPanel() {
       description: editDescription.trim(),
       detailContent: JSON.stringify(editDetailBlocks),
       imageUrl: editImageUrl.trim(),
+      videoUrl: editVideoUrl.trim(),
     })
     setEditingProduct(null)
     await reload()
@@ -232,9 +237,9 @@ export default function AdminPanel() {
             <ShieldCheck className="text-dinoclass-spark" size={24} />
           </div>
           <div className="flex-grow">
-            <h1 className="text-2xl font-bold text-white">상품 등록 대시보드</h1>
+            <h1 className="text-2xl font-bold text-white">통합 관리자 대시보드</h1>
             <p className="text-dinoclass-textSub text-sm">
-              상품을 등록하면 카테고리에 맞는 섹션에 실시간으로 자동 진열됩니다.
+              상품 관리부터 결제 내역, 고객 및 구독자 DB까지 한 곳에서 효율적으로 관리하세요.
             </p>
           </div>
           <button 
@@ -504,6 +509,23 @@ export default function AdminPanel() {
                   </div>
                 )}
               </div>
+
+              {(category === 'vod' || category === 'freebie') && (
+                <div>
+                  <label htmlFor="product-video-url" className="admin-label flex items-center gap-2 mb-1.5">
+                    <span className="text-dinoclass-spark">▶</span> Vimeo 동영상 링크 (선택)
+                  </label>
+                  <input
+                    id="product-video-url"
+                    type="url"
+                    placeholder="https://player.vimeo.com/video/..."
+                    value={videoUrl}
+                    onChange={(e) => setVideoUrl(e.target.value)}
+                    className="admin-input"
+                  />
+                  <p className="text-[10px] text-dinoclass-textSub mt-1.5 ml-1">강의를 시청할 때 보여줄 Vimeo Embed URL을 입력하세요.</p>
+                </div>
+              )}
 
               <div>
                 <label className="admin-label flex items-center gap-2 mb-3">

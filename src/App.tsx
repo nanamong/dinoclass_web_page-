@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Routes, Route, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Rocket, Mail, ChevronRight, CheckCircle2, ChevronDown, Wrench, ShoppingCart } from 'lucide-react'
+import { Rocket, Mail, ChevronRight, CheckCircle2, ChevronDown, Wrench, ShoppingCart, Gift } from 'lucide-react'
 import { getProductsByCategory, type Product } from './productStore'
 import { getCartCount } from './cartStore'
 import AdminPanel from './AdminPanel'
@@ -9,6 +9,10 @@ import ProductDetail from './ProductDetail'
 import PaymentSuccess from './PaymentSuccess'
 import CheckoutPage from './CheckoutPage'
 import CartPage from './CartPage'
+import MyPage from './MyPage'
+import CourseViewer from './CourseViewer'
+
+import { useAuthStore } from './authStore'
 import Toast from './components/Toast'
 import NewsletterModal from './components/NewsletterModal'
 
@@ -95,15 +99,15 @@ function HomeContent({ setIsNewsletterOpen }: { setIsNewsletterOpen: (v: boolean
   return (
     <>
       {/* Hero */}
-      <section className="w-full h-[80vh] relative overflow-hidden flex items-center justify-center bg-[#fafafa]">
+      <section className="w-full h-[75vh] relative overflow-hidden flex items-center justify-center bg-[#fafafa]">
         
-        {/* Spline 3D Robot (Taller than section to clip the logo at the bottom, but centered vertically) */}
-        <div className="absolute top-1/2 left-0 w-full h-[100vh] -translate-y-1/2 z-0">
+        {/* Spline 3D Robot (Shifted down to hide the Spline logo, full width to avoid box effect) */}
+        <div className="absolute bottom-[-60px] left-0 w-full h-[100vh] z-0">
           <spline-viewer url="https://prod.spline.design/Onqvfz8w6QhTorLz/scene.splinecode" className="block w-full h-full"></spline-viewer>
         </div>
 
         {/* Radial Menu Buttons & Speech Bubbles */}
-        <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center max-w-7xl mx-auto px-4 overflow-hidden md:overflow-visible">
+        <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center w-full overflow-hidden md:overflow-visible">
           <AnimatePresence mode="popLayout">
             {/* ── Left Side Menus (Hidden when Left Bubble is active) ── */}
             {msgPhase !== 3 && (
@@ -112,7 +116,7 @@ function HomeContent({ setIsNewsletterOpen }: { setIsNewsletterOpen: (v: boolean
                 <motion.a
                   href="#gifts"
                   initial={{ opacity: 0, x: -50, y: -50 }} animate={{ opacity: 1, x: 0, y: 0 }} transition={{ duration: 0.6, ease: "easeOut" }}
-                  className="glass-button pointer-events-auto absolute top-[15%] left-[10%] md:left-[20%] px-6 py-3 rounded-full hover:scale-125 transition-all duration-300 font-bold text-sm md:text-base flex items-center gap-2 group cursor-pointer"
+                  className="glass-button pointer-events-auto absolute top-[15%] left-[5%] md:left-[25%] lg:left-[28%] xl:left-[30%] px-5 py-2.5 md:px-6 md:py-3 lg:px-8 lg:py-4 xl:px-10 xl:py-5 2xl:px-12 2xl:py-6 rounded-full hover:scale-125 transition-all duration-300 font-bold text-sm md:text-base lg:text-lg xl:text-xl 2xl:text-2xl whitespace-nowrap flex items-center gap-2 group cursor-pointer"
                 >
                   <span className="text-xl group-hover:animate-bounce">🎁</span>
                   <span className="bg-clip-text text-transparent bg-gradient-to-r from-pink-500 via-orange-400 to-rose-500 animate-gradient-xy">웰컴선물키트</span>
@@ -121,7 +125,7 @@ function HomeContent({ setIsNewsletterOpen }: { setIsNewsletterOpen: (v: boolean
                 <motion.a
                   href="#ebook"
                   initial={{ opacity: 0, x: -50, y: 0 }} animate={{ opacity: 1, x: 0, y: 0 }} transition={{ duration: 0.6, delay: 0.1, ease: "easeOut" }}
-                  className="glass-button pointer-events-auto absolute top-[45%] left-[5%] md:left-[10%] px-6 py-3 rounded-full hover:scale-125 transition-all duration-300 font-bold text-sm md:text-base flex items-center gap-2 group cursor-pointer"
+                  className="glass-button pointer-events-auto absolute top-[45%] left-[2%] md:left-[18%] lg:left-[22%] xl:left-[24%] px-5 py-2.5 md:px-6 md:py-3 lg:px-8 lg:py-4 xl:px-10 xl:py-5 2xl:px-12 2xl:py-6 rounded-full hover:scale-125 transition-all duration-300 font-bold text-sm md:text-base lg:text-lg xl:text-xl 2xl:text-2xl whitespace-nowrap flex items-center gap-2 group cursor-pointer"
                 >
                   <span className="text-xl group-hover:animate-bounce">📖</span>
                   <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-600 via-teal-500 to-green-600 animate-gradient-xy">전자책</span>
@@ -130,7 +134,7 @@ function HomeContent({ setIsNewsletterOpen }: { setIsNewsletterOpen: (v: boolean
                 <motion.a
                   href="#free-course"
                   initial={{ opacity: 0, x: -50, y: 50 }} animate={{ opacity: 1, x: 0, y: 0 }} transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
-                  className="glass-button pointer-events-auto absolute top-[75%] left-[10%] md:left-[20%] px-6 py-3 rounded-full hover:scale-125 transition-all duration-300 font-bold text-sm md:text-base flex items-center gap-2 group cursor-pointer"
+                  className="glass-button pointer-events-auto absolute top-[75%] left-[5%] md:left-[23%] lg:left-[25%] xl:left-[27%] px-5 py-2.5 md:px-6 md:py-3 lg:px-8 lg:py-4 xl:px-10 xl:py-5 2xl:px-12 2xl:py-6 rounded-full hover:scale-125 transition-all duration-300 font-bold text-sm md:text-base lg:text-lg xl:text-xl 2xl:text-2xl whitespace-nowrap flex items-center gap-2 group cursor-pointer"
                 >
                   <span className="text-xl group-hover:animate-bounce">🎓</span>
                   <span className="bg-clip-text text-transparent bg-gradient-to-r from-yellow-500 via-amber-400 to-orange-500 animate-gradient-xy">무료 강의</span>
@@ -145,7 +149,7 @@ function HomeContent({ setIsNewsletterOpen }: { setIsNewsletterOpen: (v: boolean
                 <motion.a
                   href="#vod"
                   initial={{ opacity: 0, x: 50, y: -50 }} animate={{ opacity: 1, x: 0, y: 0 }} transition={{ duration: 0.6, ease: "easeOut" }}
-                  className="glass-button pointer-events-auto absolute top-[15%] right-[10%] md:right-[20%] px-6 py-3 rounded-full hover:scale-125 transition-all duration-300 font-bold text-sm md:text-base flex items-center gap-2 group cursor-pointer"
+                  className="glass-button pointer-events-auto absolute top-[15%] right-[5%] md:right-[25%] lg:right-[28%] xl:right-[30%] px-5 py-2.5 md:px-6 md:py-3 lg:px-8 lg:py-4 xl:px-10 xl:py-5 2xl:px-12 2xl:py-6 rounded-full hover:scale-125 transition-all duration-300 font-bold text-sm md:text-base lg:text-lg xl:text-xl 2xl:text-2xl whitespace-nowrap flex items-center gap-2 group cursor-pointer"
                 >
                   <span className="text-xl group-hover:animate-bounce">📺</span>
                   <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-cyan-500 to-indigo-600 animate-gradient-xy">VOD 강의</span>
@@ -154,7 +158,7 @@ function HomeContent({ setIsNewsletterOpen }: { setIsNewsletterOpen: (v: boolean
                 <motion.a
                   href="#reviews"
                   initial={{ opacity: 0, x: 50, y: 0 }} animate={{ opacity: 1, x: 0, y: 0 }} transition={{ duration: 0.6, delay: 0.1, ease: "easeOut" }}
-                  className="glass-button pointer-events-auto absolute top-[45%] right-[5%] md:right-[10%] px-6 py-3 rounded-full hover:scale-125 transition-all duration-300 font-bold text-sm md:text-base flex items-center gap-2 group cursor-pointer"
+                  className="glass-button pointer-events-auto absolute top-[45%] right-[2%] md:right-[18%] lg:right-[22%] xl:right-[24%] px-5 py-2.5 md:px-6 md:py-3 lg:px-8 lg:py-4 xl:px-10 xl:py-5 2xl:px-12 2xl:py-6 rounded-full hover:scale-125 transition-all duration-300 font-bold text-sm md:text-base lg:text-lg xl:text-xl 2xl:text-2xl whitespace-nowrap flex items-center gap-2 group cursor-pointer"
                 >
                   <span className="text-xl group-hover:animate-bounce">💬</span>
                   <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-600 via-fuchsia-500 to-violet-600 animate-gradient-xy">수강생 후기</span>
@@ -163,7 +167,7 @@ function HomeContent({ setIsNewsletterOpen }: { setIsNewsletterOpen: (v: boolean
                 <motion.a
                   href="#faq"
                   initial={{ opacity: 0, x: 50, y: 50 }} animate={{ opacity: 1, x: 0, y: 0 }} transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
-                  className="glass-button pointer-events-auto absolute top-[75%] right-[10%] md:right-[20%] px-6 py-3 rounded-full hover:scale-125 transition-all duration-300 font-bold text-sm md:text-base flex items-center gap-2 group cursor-pointer"
+                  className="glass-button pointer-events-auto absolute top-[75%] right-[5%] md:right-[22%] lg:right-[24%] xl:right-[26%] px-5 py-2.5 md:px-6 md:py-3 lg:px-8 lg:py-4 xl:px-10 xl:py-5 2xl:px-12 2xl:py-6 rounded-full hover:scale-125 transition-all duration-300 font-bold text-sm md:text-base lg:text-lg xl:text-xl 2xl:text-2xl whitespace-nowrap flex items-center gap-2 group cursor-pointer"
                 >
                   <span className="text-xl group-hover:animate-bounce">❓</span>
                   <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-sky-400 to-blue-500 animate-gradient-xy">자주 묻는 질문</span>
@@ -179,7 +183,7 @@ function HomeContent({ setIsNewsletterOpen }: { setIsNewsletterOpen: (v: boolean
                 animate={{ opacity: 1, scale: 1, x: 0 }}
                 exit={{ opacity: 0, scale: 0.8, x: 50 }}
                 transition={{ type: 'spring', bounce: 0.4 }}
-                className="absolute top-1/2 -translate-y-1/2 right-[2%] md:right-[5%] w-[280px] md:w-[380px] lg:w-[440px] py-12 px-6 md:px-10 flex items-center justify-center z-20 pointer-events-auto"
+                className="absolute top-1/2 -translate-y-1/2 right-[5%] md:right-[8%] lg:right-[10%] xl:right-[12%] w-[300px] md:w-[420px] lg:w-[480px] py-14 px-8 md:px-12 flex items-center justify-center z-20 pointer-events-auto"
                 style={{
                   background: 'rgba(235, 245, 255, 0.25)',
                   backdropFilter: 'blur(20px)',
@@ -201,7 +205,7 @@ function HomeContent({ setIsNewsletterOpen }: { setIsNewsletterOpen: (v: boolean
                     transform: 'rotate(45deg) skew(15deg, 15deg)'
                   }} 
                 />
-                <p className="font-['Nanum_Pen_Script'] text-2xl md:text-3xl lg:text-[34px] text-zinc-800 leading-relaxed relative z-10 text-center tracking-wide break-keep">
+                <p className="font-['Nanum_Pen_Script'] text-[28px] md:text-[36px] lg:text-[40px] text-zinc-800 leading-relaxed relative z-10 text-center tracking-wide break-keep">
                   당신의 지식을 콘텐츠로 바꾸어<br/>수익화하는 방법을 연구합니다.
                 </p>
               </motion.div>
@@ -215,7 +219,7 @@ function HomeContent({ setIsNewsletterOpen }: { setIsNewsletterOpen: (v: boolean
                 animate={{ opacity: 1, scale: 1, x: 0 }}
                 exit={{ opacity: 0, scale: 0.8, x: -50 }}
                 transition={{ type: 'spring', bounce: 0.4 }}
-                className="absolute top-1/2 -translate-y-1/2 left-[2%] md:left-[5%] w-[280px] md:w-[380px] lg:w-[440px] py-12 px-6 md:px-10 flex items-center justify-center z-20 pointer-events-auto"
+                className="absolute top-1/2 -translate-y-1/2 left-[5%] md:left-[8%] lg:left-[10%] xl:left-[12%] w-[300px] md:w-[420px] lg:w-[480px] py-14 px-8 md:px-12 flex items-center justify-center z-20 pointer-events-auto"
                 style={{
                   background: 'rgba(235, 245, 255, 0.25)',
                   backdropFilter: 'blur(20px)',
@@ -237,7 +241,7 @@ function HomeContent({ setIsNewsletterOpen }: { setIsNewsletterOpen: (v: boolean
                     transform: 'rotate(45deg) skew(15deg, 15deg)'
                   }} 
                 />
-                <p className="font-['Nanum_Pen_Script'] text-2xl md:text-3xl lg:text-[34px] text-zinc-800 leading-relaxed relative z-10 text-center tracking-wide break-keep">
+                <p className="font-['Nanum_Pen_Script'] text-[28px] md:text-[36px] lg:text-[40px] text-zinc-800 leading-relaxed relative z-10 text-center tracking-wide break-keep">
                   흩어져 있는 노하우를 모아<br/>평생 수익을 창출하는<br/>시스템을 구축하세요.
                 </p>
               </motion.div>
@@ -246,34 +250,42 @@ function HomeContent({ setIsNewsletterOpen }: { setIsNewsletterOpen: (v: boolean
         </div>
       </section>
       {/* ── 웰컴선물키트 (freebie) ── */}
-      <section id="gifts" className="py-24 bg-dinoclass-surface/50 border-y border-dinoclass-surface">
+      <section id="gifts" className="py-24 bg-white relative">
         <div className="max-w-7xl mx-auto px-6">
           <SectionFadeIn>
             <div className="text-center mb-16">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">🎁 웰컴선물키트</h2>
-              <p className="text-dinoclass-textSub text-lg">뉴스레터를 구독하시면 수익화에 필요한 템플릿과 노하우를 무료로 드립니다!</p>
+              <p className="text-dinoclass-textSub text-lg">뉴스레터를 구독하시면 수익화에 필요한 웰컴선물키트 10종을 무료로 드립니다!</p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {["자동화 수익 파이프라인 템플릿","팔리는 랜딩페이지 카피라이팅 가이드","초보자를 위한 전자책 작성 노하우 PDF"].map((title, i) => (
-                <div key={i} className="hover-lift bg-dinoclass-background border border-dinoclass-surface rounded-2xl p-8 cursor-pointer group">
-                  <div className="w-12 h-12 bg-dinoclass-surface rounded-xl flex items-center justify-center mb-6 group-hover:bg-dinoclass-spark/10 transition-colors">
-                    <CheckCircle2 className="text-dinoclass-spark" />
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 md:gap-6">
+              {Array.from({ length: 10 }).map((_, i) => {
+                const product = freebieProducts[i];
+                return (
+                  <div key={i} className="bg-dinoclass-surface rounded-2xl overflow-hidden aspect-square flex items-center justify-center border border-zinc-100 shadow-sm relative">
+                    {product && product.imageUrl ? (
+                      <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                    ) : (
+                      <img src={`/dummy_gift_${(i % 3) + 1}.png`} alt="Coming Soon" className="w-full h-full object-cover" />
+                    )}
                   </div>
-                  <h3 className="text-xl font-bold mb-3">{title}</h3>
-                  <p className="text-dinoclass-textSub text-sm">이메일 구독 즉시 다운로드 링크를 보내드립니다.</p>
-                </div>
-              ))}
-              {/* 관리자 등록 무료배포자료 */}
-              <AnimatePresence>
-                {freebieProducts.map((p) => <DynamicCard key={p.id} product={p} />)}
-              </AnimatePresence>
+                );
+              })}
+            </div>
+
+            <div className="mt-12 text-center">
+              <button 
+                onClick={() => setIsNewsletterOpen(true)}
+                className="bg-dinoclass-spark text-black font-bold px-8 py-4 rounded-xl hover:bg-yellow-400 transition-colors hover:shadow-[0_0_20px_rgba(254,232,0,0.2)] inline-flex items-center gap-2"
+              >
+                웰컴선물키트 10종 무료 다운로드
+              </button>
             </div>
           </SectionFadeIn>
         </div>
       </section>
 
       {/* ── VOD 강의 (vod) ── */}
-      <section id="vod" className="py-24">
+      <section id="vod" className="py-24 bg-premium-grey">
         <div className="max-w-7xl mx-auto px-6">
           <SectionFadeIn>
             <div className="mb-16">
@@ -281,13 +293,14 @@ function HomeContent({ setIsNewsletterOpen }: { setIsNewsletterOpen: (v: boolean
               <p className="text-dinoclass-textSub text-lg">지식을 수익화하는 모든 과정을 기초부터 탄탄하게 알려드립니다.</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[1,2,3,4].map((i) => (
+              {vodProducts.length === 0 && [1, 2, 3, 4].map((i) => (
                 <div
-                  key={i}
+                  key={`dummy-${i}`}
                   onClick={() => navigate(`/products/static-vod-${i}`)}
                   className="hover-lift bg-dinoclass-surface rounded-2xl overflow-hidden cursor-pointer flex flex-col h-full border border-transparent hover:border-dinoclass-spark/50"
                 >
-                  <div className="aspect-square object-cover bg-zinc-800 relative">
+                  <div className="aspect-square object-cover bg-zinc-800 relative overflow-hidden">
+                    <img src={`/vod_dummy_${i}.png`} alt={`VOD Class ${i}`} className="w-full h-full object-cover" />
                     <div className="absolute top-4 right-4 bg-dinoclass-spark text-black text-xs font-bold px-2 py-1 rounded">BEST</div>
                   </div>
                   <div className="p-6 flex flex-col flex-grow">
@@ -310,28 +323,31 @@ function HomeContent({ setIsNewsletterOpen }: { setIsNewsletterOpen: (v: boolean
       </section>
 
       {/* ── 전자책 (ebook) ── */}
-      <section id="ebook" className="py-24 bg-dinoclass-surface/50 border-y border-dinoclass-surface">
+      <section id="ebook" className="py-24 bg-white relative">
         <div className="max-w-7xl mx-auto px-6">
           <SectionFadeIn>
             <div className="mb-16">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">디노에뜨의 전자책</h2>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">전자책</h2>
               <p className="text-dinoclass-textSub text-lg">핵심만 압축한 전자책으로 수익화의 지름길을 확인하세요.</p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[
-                { id: 'static-ebook-1', title: "왕초보를 위한 패시브 인컴 기초 설계도", price: "29,000원" },
-                { id: 'static-ebook-2', title: "안 팔리는 전자책을 베스트셀러로 만드는 카피라이팅", price: "39,000원" },
-                { id: 'static-ebook-3', title: "하루 1시간, 월 100만 원 자동 수익 시스템 구축법", price: "49,000원" }
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {ebookProducts.length === 0 && [
+                { id: 'static-ebook-1', title: "왕초보를 위한 패시브 인컴 기초 설계도", price: "29,000원", index: 1 },
+                { id: 'static-ebook-2', title: "안 팔리는 전자책을 베스트셀러로 만드는 카피라이팅", price: "39,000원", index: 2 },
+                { id: 'static-ebook-3', title: "하루 1시간, 월 100만 원 자동 수익 시스템 구축법", price: "49,000원", index: 3 },
+                { id: 'static-ebook-4', title: "잘 팔리는 상세페이지의 비밀 공식 10가지", price: "35,000원", index: 4 }
               ].map((book) => (
                 <div
                   key={book.id}
                   onClick={() => navigate(`/products/${book.id}`)}
-                  className="hover-lift bg-dinoclass-background rounded-2xl overflow-hidden cursor-pointer flex flex-col border border-dinoclass-surface hover:border-dinoclass-spark/50"
+                  className="hover-lift bg-dinoclass-background rounded-2xl overflow-hidden cursor-pointer flex flex-col h-full border border-dinoclass-surface hover:border-dinoclass-spark/50"
                 >
-                  <div className="aspect-square object-cover bg-zinc-800/80" />
-                  <div className="p-6 flex flex-col h-full">
+                  <div className="aspect-square object-cover bg-zinc-800/80 relative overflow-hidden">
+                    <img src={`/ebook_dummy_${book.index}.png`} alt={book.title} className="w-full h-full object-cover" />
+                  </div>
+                  <div className="p-6 flex flex-col flex-grow">
                     <h3 className="font-bold text-lg mb-2 flex-grow">{book.title}</h3>
-                    <div className="flex items-center justify-between mt-4">
+                    <div className="flex items-center justify-between mt-auto pt-4">
                       <span className="text-lg font-bold font-mono">{book.price}</span>
                       <span className="text-dinoclass-spark text-sm font-bold">자세히 보기</span>
                     </div>
@@ -347,8 +363,49 @@ function HomeContent({ setIsNewsletterOpen }: { setIsNewsletterOpen: (v: boolean
         </div>
       </section>
 
+      {/* ── 무료 강의 (free-course) ── */}
+      <section id="free-course" className="py-24 bg-premium-grey">
+        <div className="max-w-7xl mx-auto px-6">
+          <SectionFadeIn>
+            <div className="mb-16">
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">무료 강의</h2>
+              <p className="text-dinoclass-textSub text-lg">부담 없이 시작할 수 있는 디노클래스의 무료 맛보기 강의입니다.</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[
+                { id: 'static-free-1', title: "[무료] 1시간 만에 이해하는 자동화 수익의 원리", originalPrice: "59,000원", price: "0원", index: 1 },
+                { id: 'static-free-2', title: "[무료] 나만의 지식 아이템 찾기 특강", originalPrice: "49,000원", price: "0원", index: 2 },
+                { id: 'static-free-3', title: "[무료] 블로그로 시작하는 제2의 월급 만들기", originalPrice: "39,000원", price: "0원", index: 3 },
+                { id: 'static-free-4', title: "[무료] 왕초보 탈출 마인드셋 특강", originalPrice: "29,000원", price: "0원", index: 4 }
+              ].map((course) => (
+                <div
+                  key={course.id}
+                  onClick={() => navigate(`/products/${course.id}`)}
+                  className="hover-lift bg-dinoclass-surface rounded-2xl overflow-hidden cursor-pointer flex flex-col h-full border border-transparent hover:border-dinoclass-spark/50"
+                >
+                  <div className="aspect-square object-cover bg-zinc-800 relative overflow-hidden">
+                    <img src={`/free_dummy_${course.index}.png`} alt={course.title} className="w-full h-full object-cover" />
+                    <div className="absolute top-4 right-4 bg-dinoclass-spark text-black text-xs font-bold px-2 py-1 rounded">FREE</div>
+                  </div>
+                  <div className="p-6 flex flex-col flex-grow">
+                    <h3 className="font-bold text-lg mb-2 flex-grow">{course.title}</h3>
+                    <div className="flex items-center justify-between mt-auto pt-4">
+                      <div className="flex items-baseline gap-2">
+                        <del className="text-sm text-zinc-400 font-mono">{course.originalPrice}</del>
+                        <span className="text-lg font-bold font-mono text-dinoclass-spark">{course.price}</span>
+                      </div>
+                      <span className="text-dinoclass-spark text-sm font-bold">수강하기 &rarr;</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </SectionFadeIn>
+        </div>
+      </section>
+
       {/* ── 수강생 후기 ── */}
-      <section id="reviews" className="py-24 overflow-hidden">
+      <section id="reviews" className="py-24 bg-white relative overflow-hidden">
         <SectionFadeIn>
           <div className="text-center mb-16 px-6">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">수강생 리얼 후기</h2>
@@ -385,7 +442,7 @@ function HomeContent({ setIsNewsletterOpen }: { setIsNewsletterOpen: (v: boolean
       </section>
 
       {/* FAQ */}
-      <section className="py-24 bg-dinoclass-surface/30">
+      <section id="faq" className="py-24 bg-premium-grey">
         <div className="max-w-3xl mx-auto px-6">
           <SectionFadeIn>
             <div className="text-center mb-16"><h2 className="text-3xl md:text-4xl font-bold">자주 묻는 질문</h2></div>
@@ -440,7 +497,7 @@ function HomeContent({ setIsNewsletterOpen }: { setIsNewsletterOpen: (v: boolean
               <div>
                 <button 
                   onClick={() => setIsNewsletterOpen(true)} 
-                  className="bg-dinoclass-spark text-black border border-dinoclass-spark font-bold px-8 py-4 rounded-xl hover:bg-black hover:text-dinoclass-spark hover:border-dinoclass-spark transition-colors shadow-[0_0_20px_rgba(254,232,0,0.25)]"
+                  className="bg-dinoclass-spark text-black font-bold px-8 py-4 rounded-xl hover:bg-yellow-400 transition-colors hover:shadow-[0_0_20px_rgba(254,232,0,0.2)]"
                 >
                   무료 뉴스레터 구독하기
                 </button>
@@ -458,6 +515,9 @@ function HomeContent({ setIsNewsletterOpen }: { setIsNewsletterOpen: (v: boolean
 export default function App() {
   const [isAdmin, setIsAdmin] = useState(false)
   const [cartCount, setCartCount] = useState(0)
+  const user = useAuthStore(state => state.user)
+  const login = useAuthStore(state => state.login)
+  const logout = useAuthStore(state => state.logout)
   const [isNewsletterOpen, setIsNewsletterOpen] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
   
@@ -468,11 +528,19 @@ export default function App() {
   const navigate = useNavigate()
 
   useEffect(() => {
+    // Check initial user from query params, etc.
+  }, [])
+
+  useEffect(() => {
+    // load initial cart count
     setCartCount(getCartCount())
+    
+    // listen to cart updates
     const handleCartUpdate = () => setCartCount(getCartCount())
     window.addEventListener('cartUpdated', handleCartUpdate)
     return () => window.removeEventListener('cartUpdated', handleCartUpdate)
   }, [])
+
 
   return (
     <div className="min-h-screen bg-dinoclass-background text-dinoclass-textMain font-sans flex flex-col">
@@ -488,7 +556,9 @@ export default function App() {
               <a href="/#gifts" className="hover:text-zinc-900 transition-colors">웰컴선물키트</a>
               <a href="/#vod" className="hover:text-zinc-900 transition-colors">VOD 강의</a>
               <a href="/#ebook" className="hover:text-zinc-900 transition-colors">전자책</a>
+              <a href="/#free-course" className="hover:text-zinc-900 transition-colors">무료 강의</a>
               <a href="/#reviews" className="hover:text-zinc-900 transition-colors">수강생 후기</a>
+              <a href="/#faq" className="hover:text-zinc-900 transition-colors">FAQ</a>
             </>)}
           </nav>
           <div className="flex gap-2 items-center -mt-0.5">
@@ -504,8 +574,25 @@ export default function App() {
                   </span>
                 )}
               </button>
-              <button className="text-zinc-500 hover:text-zinc-900 transition-colors text-sm px-2">로그인</button>
-              <button className="border border-zinc-200 text-zinc-700 bg-white/50 backdrop-blur-sm px-4 py-1.5 rounded-full font-medium hover:bg-white hover:shadow-sm hover:border-zinc-300 transition-all text-sm">마이페이지</button>
+              {user ? (
+                <>
+                  <span className="text-zinc-500 text-sm px-2 font-medium">{user.name}님</span>
+                  <button onClick={() => navigate('/mypage')} className="border border-zinc-200 text-zinc-700 bg-white/50 backdrop-blur-sm px-4 py-1.5 rounded-full font-medium hover:bg-white hover:shadow-sm hover:border-zinc-300 transition-all text-sm">마이페이지</button>
+                </>
+              ) : (
+                <>
+                  <button 
+                    onClick={() => {
+                      const email = window.prompt('로그인할 이메일을 입력하세요 (임시)');
+                      if (email) login(email, window.prompt('이름을 입력하세요') || '수강생');
+                    }}
+                    className="text-zinc-500 hover:text-zinc-900 transition-colors text-sm px-2"
+                  >
+                    로그인
+                  </button>
+                  <button onClick={() => navigate('/mypage')} className="border border-zinc-200 text-zinc-700 bg-white/50 backdrop-blur-sm px-4 py-1.5 rounded-full font-medium hover:bg-white hover:shadow-sm hover:border-zinc-300 transition-all text-sm">마이페이지</button>
+                </>
+              )}
             </>)}
             <button
               id="admin-toggle"
@@ -517,7 +604,7 @@ export default function App() {
               }`}
             >
               <Wrench size={13} />
-              <span className="hidden sm:inline">관리자 모드</span>
+              <span className="hidden sm:inline">{isAdmin ? '홈으로 돌아가기' : '관리자 모드'}</span>
             </button>
           </div>
         </div>
@@ -535,6 +622,8 @@ export default function App() {
             <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/payment/success" element={<PaymentSuccess />} />
             <Route path="/payment/fail" element={<PaymentSuccess />} />
+            <Route path="/mypage" element={<MyPage />} />
+            <Route path="/course/:id" element={<CourseViewer />} />
           </Routes>
         )}
       </main>

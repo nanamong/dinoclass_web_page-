@@ -152,8 +152,8 @@ export default function DetailBlockEditor({ blocks, onChange, onShowToast }: Pro
 
         <div className="w-[1px] h-5 bg-zinc-700 mx-1" />
 
-        {/* 형광펜 */}
-        <div className="flex bg-zinc-800 rounded-lg p-0.5 border border-zinc-700">
+        {/* 형광펜 & 이미지 추가 */}
+        <div className="flex bg-zinc-800 rounded-lg p-0.5 border border-zinc-700 items-center">
           <button 
             type="button" 
             onClick={() => updateCurrentBlock({ highlight: currentBlock?.highlight === 'yellow' ? undefined : 'yellow' })} 
@@ -172,19 +172,18 @@ export default function DetailBlockEditor({ blocks, onChange, onShowToast }: Pro
           >
             <PaintBucket size={14} className="text-[#34D399]" />
           </button>
+          
+          <div className="w-[1px] h-4 bg-zinc-700 mx-1" />
+          
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="p-1.5 rounded-md flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-700 transition-colors"
+            title="사진 추가"
+          >
+            <ImageIcon size={14} />
+          </button>
         </div>
-
-        <div className="flex-grow" />
-
-        {/* 이미지 업로드 */}
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          className="flex items-center gap-1.5 bg-dinoclass-surface hover:bg-dinoclass-spark hover:text-black text-white px-3 py-1.5 rounded-lg font-bold text-sm transition-colors border border-dinoclass-spark/20"
-        >
-          <ImageIcon size={14} />
-          사진 추가
-        </button>
         <input
           type="file"
           ref={fileInputRef}

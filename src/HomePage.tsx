@@ -79,7 +79,7 @@ function NewsletterModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
                 <label className="block text-sm font-medium text-dinoclass-textSub mb-1">이메일 주소</label>
                 <input type="email" required value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-dinoclass-surface border border-dinoclass-surface rounded-xl px-4 py-3 focus:outline-none focus:border-dinoclass-spark transition-colors text-white" placeholder="example@email.com" />
               </div>
-              <button type="submit" className="w-full bg-dinoclass-spark text-white font-bold py-4 rounded-xl mt-4 hover:bg-purple-500 transition-colors">무료로 즉시 구독하기</button>
+              <button type="submit" className="w-full bg-dinoclass-spark text-white font-bold py-4 rounded-xl mt-4 hover:brightness-110 transition-all">무료로 즉시 구독하기</button>
             </form>
           )}
         </div>
@@ -135,7 +135,7 @@ export default function HomePage() {
           </nav>
           <div className="flex gap-4">
             <button className="text-dinoclass-textSub hover:text-dinoclass-textMain transition-colors">로그인</button>
-            <button className="bg-dinoclass-spark text-white px-5 py-2 rounded-lg font-bold hover:bg-purple-500 transition-colors">
+            <button className="bg-dinoclass-spark text-white px-5 py-2 rounded-lg font-bold hover:brightness-110 transition-all">
               마이페이지
             </button>
           </div>
@@ -440,7 +440,7 @@ export default function HomePage() {
                   placeholder="이메일 주소를 입력해주세요" 
                   className="flex-grow bg-dinoclass-background border border-dinoclass-textSub/30 rounded-xl px-6 py-4 outline-none focus:border-dinoclass-spark transition-colors"
                 />
-                <button onClick={() => setShowNewsletterModal(true)} className="bg-dinoclass-spark text-white font-bold px-8 py-4 rounded-xl hover:bg-purple-500 transition-colors whitespace-nowrap">
+                <button onClick={() => setShowNewsletterModal(true)} className="bg-dinoclass-spark text-white font-bold px-8 py-4 rounded-xl hover:brightness-110 transition-all whitespace-nowrap">
                   무료 구독하기
                 </button>
               </div>
