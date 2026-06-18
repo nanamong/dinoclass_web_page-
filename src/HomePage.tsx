@@ -20,12 +20,6 @@ const SectionFadeIn = ({ children }: { children: React.ReactNode }) => (
   </motion.div>
 )
 
-// 기본(하드코딩) 전자책 데이터 — 관리자가 등록한 상품 위에 함께 노출됩니다.
-const defaultBooks = [
-  { title: "왕초보를 위한 패시브 인컴 기초 설계도", price: "29,000원" },
-  { title: "안 팔리는 전자책을 베스트셀러로 만드는 카피라이팅", price: "39,000원" },
-  { title: "하루 1시간, 월 100만 원 자동 수익 시스템 구축법", price: "49,000원" },
-]
 
 function NewsletterModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const [name, setName] = useState('')
@@ -98,11 +92,20 @@ export default function HomePage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [dynamicProducts, setDynamicProducts] = useState<Product[]>([]);
   const [showNewsletterModal, setShowNewsletterModal] = useState(false);
+  const [dbError, setDbError] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Supabase에서 상품을 주기적으로 읽어와 실시간 반영
   useEffect(() => {
-    const load = async () => setDynamicProducts(await getProducts());
+    const load = async () => {
+      try {
+        const products = await getProducts();
+        setDynamicProducts(products);
+        setDbError(false);
+      } catch (error) {
+        setDbError(true);
+      }
+    };
     load();
     intervalRef.current = setInterval(load, 2000); // 2초마다 폴링
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
@@ -219,23 +222,37 @@ export default function HomePage() {
                   지식을 수익화하는 모든 과정을 기초부터 탄탄하게 알려드립니다.
                 </p>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="hover-lift bg-dinoclass-surface rounded-2xl overflow-hidden cursor-pointer flex flex-col h-full border border-transparent hover:border-dinoclass-spark/50">
-                    <div className="aspect-square bg-zinc-800 relative">
-                      <div className="absolute top-4 right-4 bg-dinoclass-spark text-white text-xs font-bold px-2 py-1 rounded">BEST</div>
-                    </div>
-                    <div className="p-6 flex flex-col flex-grow">
-                      <h3 className="font-bold text-lg mb-2">지식 창업 올인원 마스터 클래스 {i}기</h3>
-                      <p className="text-dinoclass-textSub text-sm mb-6 flex-grow">나만의 지식을 찾아 상품화하고, 자동 결제 시스템을 구축하는 A to Z</p>
-                      <div className="flex items-center justify-between mt-auto">
-                        <span className="text-xl font-bold font-mono">199,000원</span>
-                        <span className="text-dinoclass-spark text-sm font-bold">수강하기 &rarr;</span>
+              {dbError ? (
+                <div className="text-center py-12 bg-dinoclass-surface/50 rounded-2xl border border-red-500/20 text-red-400">
+                  <p>데이터베이스(Supabase)가 일시 정지(Pause) 상태이거나 연결에 실패했습니다.</p>
+                  <p className="text-sm mt-2 opacity-80">무료 요금제의 경우 프로젝트 대시보드에 접속하여 다시 활성화해주세요.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {dynamicProducts.filter(p => p.category === 'vod').map((product) => (
+                    <Link to={`/product/${product.id}`} key={product.id} className="hover-lift bg-dinoclass-surface rounded-2xl overflow-hidden cursor-pointer flex flex-col h-full border border-transparent hover:border-dinoclass-spark/50">
+                      <div className="aspect-square bg-zinc-800 relative">
+                        {product.imageUrl && (
+                          <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
+                        )}
                       </div>
+                      <div className="p-6 flex flex-col flex-grow">
+                        <h3 className="font-bold text-lg mb-2">{product.name}</h3>
+                        <p className="text-dinoclass-textSub text-sm mb-6 flex-grow">{product.description}</p>
+                        <div className="flex items-center justify-between mt-auto">
+                          <span className="text-xl font-bold font-mono">{product.price}</span>
+                          <span className="text-dinoclass-spark text-sm font-bold">수강하기 &rarr;</span>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                  {dynamicProducts.filter(p => p.category === 'vod').length === 0 && !dbError && (
+                    <div className="col-span-full text-center py-12 text-dinoclass-textSub">
+                      등록된 VOD 강의가 없습니다.
                     </div>
-                  </div>
-                ))}
-              </div>
+                  )}
+                </div>
+              )}
             </SectionFadeIn>
           </div>
         </section>
@@ -250,55 +267,53 @@ export default function HomePage() {
                   핵심만 압축한 전자책으로 수익화의 지름길을 확인하세요.
                 </p>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* 기본(하드코딩) 전자책 카드 */}
-                {defaultBooks.map((book, i) => (
-                  <div key={`default-${i}`} className="hover-lift bg-dinoclass-background rounded-2xl overflow-hidden cursor-pointer flex flex-col border border-dinoclass-surface hover:border-dinoclass-spark/50">
-                    <div className="aspect-square bg-zinc-800/80"></div>
-                    <div className="p-6 flex flex-col h-full">
-                      <h3 className="font-bold text-lg mb-2 flex-grow">{book.title}</h3>
-                      <div className="flex items-center justify-between mt-4">
-                        <span className="text-lg font-bold font-mono">{book.price}</span>
-                        <span className="text-dinoclass-spark text-sm font-bold">자세히 보기</span>
+              {dbError ? (
+                <div className="text-center py-12 bg-dinoclass-surface/50 rounded-2xl border border-red-500/20 text-red-400">
+                  <p>데이터베이스(Supabase)가 일시 정지(Pause) 상태이거나 연결에 실패했습니다.</p>
+                  <p className="text-sm mt-2 opacity-80">무료 요금제의 경우 프로젝트 대시보드에 접속하여 다시 활성화해주세요.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <AnimatePresence>
+                    {dynamicProducts.filter(p => p.category === 'ebook').map((product) => (
+                      <motion.div
+                        key={product.id}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        transition={{ duration: 0.35 }}
+                        className="h-full"
+                      >
+                        <Link to={`/product/${product.id}`} className="hover-lift bg-dinoclass-background rounded-2xl overflow-hidden cursor-pointer flex flex-col h-full border border-dinoclass-surface hover:border-dinoclass-spark/50">
+                          <div className="aspect-square bg-zinc-800/80 overflow-hidden relative">
+                            {product.imageUrl && (
+                              <img
+                                src={product.imageUrl}
+                                alt={product.name}
+                                className="w-full h-full object-cover"
+                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                              />
+                            )}
+                          </div>
+                          <div className="p-6 flex flex-col flex-grow">
+                            <h3 className="font-bold text-lg mb-1 flex-grow">{product.name}</h3>
+                            <p className="text-dinoclass-textSub text-sm mb-3 line-clamp-2">{product.description}</p>
+                            <div className="flex items-center justify-between mt-auto">
+                              <span className="text-lg font-bold font-mono">{product.price}</span>
+                              <span className="text-dinoclass-spark text-sm font-bold">자세히 보기</span>
+                            </div>
+                          </div>
+                        </Link>
+                      </motion.div>
+                    ))}
+                    {dynamicProducts.filter(p => p.category === 'ebook').length === 0 && !dbError && (
+                      <div className="col-span-full text-center py-12 text-dinoclass-textSub">
+                        등록된 전자책이 없습니다.
                       </div>
-                    </div>
-                  </div>
-                ))}
-
-                {/* 관리자가 등록한 동적 상품 카드 */}
-                <AnimatePresence>
-                  {dynamicProducts.map((product) => (
-                    <motion.div
-                      key={product.id}
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.9 }}
-                      transition={{ duration: 0.35 }}
-                      className="hover-lift bg-dinoclass-background rounded-2xl overflow-hidden cursor-pointer flex flex-col border border-dinoclass-surface hover:border-dinoclass-spark/50"
-                    >
-                      <div className="aspect-square bg-zinc-800/80 overflow-hidden relative">
-                        {product.imageUrl && (
-                          <img
-                            src={product.imageUrl}
-                            alt={product.name}
-                            className="w-full h-full object-cover"
-                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                          />
-                        )}
-                        <div className="absolute top-3 left-3 bg-dinoclass-spark text-white text-[10px] font-bold px-2 py-0.5 rounded">NEW</div>
-                      </div>
-                      <div className="p-6 flex flex-col h-full">
-                        <h3 className="font-bold text-lg mb-1 flex-grow">{product.name}</h3>
-                        <p className="text-dinoclass-textSub text-sm mb-3 line-clamp-2">{product.description}</p>
-                        <div className="flex items-center justify-between mt-auto">
-                          <span className="text-lg font-bold font-mono">{product.price}</span>
-                          <span className="text-dinoclass-spark text-sm font-bold">자세히 보기</span>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              </div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
             </SectionFadeIn>
           </div>
         </section>

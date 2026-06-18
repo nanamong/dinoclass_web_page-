@@ -10,6 +10,7 @@ export default function ProductDetail() {
   const navigate = useNavigate()
   const [product, setProduct] = useState<Product | null>(null)
   const [notFound, setNotFound] = useState(false)
+  const [dbError, setDbError] = useState(false)
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -17,12 +18,17 @@ export default function ProductDetail() {
     
     let isMounted = true;
     const fetchProduct = async () => {
-      const found = await getProductById(id)
-      if (!isMounted) return;
-      if (found) {
-        setProduct(found)
-      } else {
-        setNotFound(true)
+      try {
+        const found = await getProductById(id)
+        if (!isMounted) return;
+        if (found) {
+          setProduct(found)
+        } else {
+          setNotFound(true)
+        }
+      } catch (err) {
+        if (!isMounted) return;
+        setDbError(true)
       }
     }
     fetchProduct();
@@ -62,6 +68,34 @@ export default function ProductDetail() {
           <h2 className="text-3xl font-bold mb-4">상품을 찾을 수 없습니다</h2>
           <p className="text-dinoclass-textSub mb-8 max-w-md mx-auto">
             요청하신 상품이 존재하지 않거나 삭제되었을 수 있습니다.
+          </p>
+          <button
+            onClick={() => navigate('/')}
+            className="inline-flex items-center gap-2 bg-dinoclass-spark text-black font-bold px-6 py-3 rounded-xl hover:bg-yellow-400 transition-colors"
+          >
+            <ArrowLeft size={18} />
+            메인으로 돌아가기
+          </button>
+        </motion.div>
+      </div>
+    )
+  }
+
+  /* ── DB 통신 에러 ── */
+  if (dbError) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center px-6 text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <div className="w-20 h-20 rounded-2xl bg-dinoclass-surface flex items-center justify-center mx-auto mb-6">
+            <Rocket className="text-red-400" size={36} />
+          </div>
+          <h2 className="text-3xl font-bold mb-4 text-red-400">데이터베이스 오류</h2>
+          <p className="text-dinoclass-textSub mb-8 max-w-md mx-auto">
+            데이터베이스(Supabase)가 일시 정지(Pause) 상태이거나 연결에 실패했습니다.<br />
+            무료 요금제의 경우 프로젝트 대시보드에 접속하여 다시 활성화해주세요.
           </p>
           <button
             onClick={() => navigate('/')}
