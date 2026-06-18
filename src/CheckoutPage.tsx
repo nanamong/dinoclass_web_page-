@@ -22,7 +22,7 @@ export default function CheckoutPage() {
   const productId = searchParams.get('productId')
   const isCart = searchParams.get('isCart') === 'true'
 
-  const [checkoutItems, setCheckoutItems] = useState<Product[]>([])
+  const [checkoutItems, setCheckoutItems] = useState<(Product & { selectedOption?: { name: string; price: number } })[]>([])
   const [ready, setReady] = useState(false)
   const [paying, setPaying] = useState(false)
   
@@ -40,14 +40,20 @@ export default function CheckoutPage() {
         if (isMounted && cartItems.length > 0) setCheckoutItems(cartItems)
       } else if (productId) {
         const found = await getProductById(productId)
-        if (isMounted && found) setCheckoutItems([found])
+        if (isMounted && found) {
+          let selectedOption = undefined
+          if (found.category === 'vod' && found.lifetimePrice && searchParams.get('option') === 'lifetime') {
+            selectedOption = { name: '무기한 평생 수강권', price: parsePriceToNumber(found.lifetimePrice) }
+          }
+          setCheckoutItems([{ ...found, selectedOption }])
+        }
       }
     }
     fetchData();
     return () => { isMounted = false; }
   }, [productId, isCart])
 
-  const totalAmount = checkoutItems.reduce((sum, item) => sum + parsePriceToNumber(item.price), 0)
+  const totalAmount = checkoutItems.reduce((sum, item) => sum + (item.selectedOption ? item.selectedOption.price : parsePriceToNumber(item.price)), 0)
 
   // 대표 주문명 생성
   let orderName = ''
@@ -98,7 +104,10 @@ export default function CheckoutPage() {
     setPaying(true)
     try {
       const orderId = isCart ? `order-cart-${Date.now()}` : `order-${checkoutItems[0].id}-${Date.now()}`
-      const pIdParam = !isCart ? `&productId=${checkoutItems[0].id}` : ''
+      let pIdParam = !isCart ? `&productId=${checkoutItems[0].id}` : ''
+      if (!isCart && checkoutItems[0].selectedOption?.name.includes('무기한')) {
+        pIdParam += `&option=lifetime`
+      }
       await widgetsRef.current.requestPayment({
         orderId,
         orderName,
@@ -137,7 +146,7 @@ export default function CheckoutPage() {
         initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
         onClick={() => navigate(-1)}
-        className="flex items-center gap-2 text-dinoclass-textSub hover:text-white transition-colors mb-8 group"
+        className="flex items-center gap-2 text-dinoclass-textSub hover:text-zinc-900 transition-colors mb-8 group"
       >
         <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
         <span className="text-sm font-medium">뒤로가기</span>
@@ -153,7 +162,7 @@ export default function CheckoutPage() {
           <CreditCard className="text-dinoclass-spark" size={24} />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-white">결제하기</h1>
+          <h1 className="text-2xl font-bold text-zinc-900">결제하기</h1>
           <p className="text-dinoclass-textSub text-sm">토스페이먼츠 안전결제</p>
         </div>
       </motion.div>
@@ -183,10 +192,13 @@ export default function CheckoutPage() {
                 }`}>
                   {CATEGORY_LABELS[item.category]}
                 </span>
-                <p className="font-bold text-white text-sm">{item.name}</p>
+                <p className="font-bold text-zinc-900 text-sm">{item.name}</p>
+                {item.selectedOption && (
+                  <p className="text-dinoclass-textSub text-xs mt-0.5">옵션: {item.selectedOption.name}</p>
+                )}
               </div>
               <div className="text-right flex-shrink-0">
-                <span className="text-white font-mono">{item.price}</span>
+                <span className="text-zinc-900 font-mono">{item.selectedOption ? `${item.selectedOption.price.toLocaleString()}원` : item.price}</span>
               </div>
             </div>
           ))}

@@ -170,6 +170,10 @@ body {
   background: rgba(52,211,153,0.15);
   color: #6ee7b7;
 }
+.admin-category-badge--free_course {
+  background: rgba(250,204,21,0.15);
+  color: #facc15;
+}
 
 /* line-clamp-2 utility */
 .line-clamp-2 {
@@ -182,4 +186,34 @@ body {
 /* ── Premium Grey Section Background ── */
 .bg-premium-grey {
   background: linear-gradient(to top, #bcbcbc 0%, #fafafa 100%);
+}
+
+/* ── WYSIWYG Editor Styles ── */
+.prose-editor h1, .prose-detail-html h1 {
+  font-size: 1.875rem !important; /* 30px */
+  font-weight: 700 !important;
+  line-height: 1.4 !important;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+.prose-editor h2, .prose-detail-html h2 {
+  font-size: 1.5rem !important; /* 24px */
+  font-weight: 700 !important;
+  line-height: 1.4 !important;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+.prose-editor p, .prose-detail-html p {
+  font-size: 1rem !important;
+  line-height: 1.7 !important;
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+}
+.prose-editor [style*="background-color: yellow"], .prose-detail-html [style*="background-color: yellow"] {
+  background: linear-gradient(transparent 60%, rgba(254,232,0,0.4) 60%) !important;
+  background-color: transparent !important;
+}
+.prose-editor [style*="background-color: aquamarine"], .prose-detail-html [style*="background-color: aquamarine"] {
+  background: linear-gradient(transparent 60%, rgba(90,224,226,0.4) 60%) !important;
+  background-color: transparent !important;
 }

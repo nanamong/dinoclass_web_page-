@@ -13,6 +13,7 @@ export default function ProductDetail() {
   const [product, setProduct] = useState<Product | null>(null)
   const [notFound, setNotFound] = useState(false)
   const [dbError, setDbError] = useState(false)
+  const [selectedOptionIndex, setSelectedOptionIndex] = useState<0 | 1>(0)
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -38,9 +39,13 @@ export default function ProductDetail() {
   }, [id])
 
   /* ── 결제 페이지로 이동 ── */
-  const handlePayment = () => {
+  const handlePayment = (optionIndex: 0 | 1 = 0) => {
     if (!product) return
-    navigate(`/checkout?productId=${product.id}`)
+    let url = `/checkout?productId=${product.id}`
+    if (product.category === 'vod' && product.lifetimePrice && optionIndex === 1) {
+      url += `&option=lifetime`
+    }
+    navigate(url)
   }
 
   /* ── 0원 상품 무료 수강 (결제 우회) ── */
@@ -72,9 +77,17 @@ export default function ProductDetail() {
   const isFree = product?.price === '0원' || product?.price === '0' || product?.price === '무료'
 
   /* ── 장바구니 담기 ── */
-  const handleAddToCart = () => {
+  const handleAddToCart = (optionIndex: 0 | 1 = 0) => {
     if (!product) return
-    const added = addToCart(product.id)
+    
+    let option = undefined
+    if (product.category === 'vod' && product.lifetimePrice) {
+      option = optionIndex === 0 
+        ? { name: '3개월 수강권', price: parseInt(product.price.replace(/[^0-9]/g, ''), 10) }
+        : { name: '무기한 평생 수강권', price: parseInt(product.lifetimePrice.replace(/[^0-9]/g, ''), 10) }
+    }
+
+    const added = addToCart(product.id, option)
     if (added) {
       if (window.confirm('장바구니에 담겼습니다. 장바구니로 이동하시겠습니까?')) {
         navigate('/cart')
@@ -155,7 +168,10 @@ export default function ProductDetail() {
       <motion.button
         initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
-        onClick={() => navigate('/')}
+        onClick={() => {
+          const sectionHash = product.category === 'free_course' ? 'free-course' : product.category === 'freebie' ? 'gifts' : product.category
+          navigate(`/#${sectionHash}`)
+        }}
         className="flex items-center gap-2 text-dinoclass-textSub hover:text-zinc-900 transition-colors mb-8 group"
       >
         <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
@@ -218,42 +234,96 @@ export default function ProductDetail() {
             </p>
           )}
 
-          {/* 가격 */}
-          <div className="flex items-baseline gap-3 mb-8">
-            <span className="text-4xl font-bold font-mono text-dinoclass-spark">
-              {product.price}
-            </span>
-            <span className="text-dinoclass-textSub text-sm">
-              (단건 결제 · 평생 소장)
-            </span>
-          </div>
+          {/* 수강 기간 옵션 (각각의 카드 형태로 렌더링) */}
+          {product.category === 'vod' && product.lifetimePrice ? (
+            <div className="flex flex-col gap-5 mb-8">
+              {/* 3개월 수강권 카드 */}
+              <div className="p-5 border border-dinoclass-surface rounded-2xl bg-dinoclass-surface/20 flex flex-col gap-4">
+                <div className="flex items-baseline gap-3">
+                  <span className="text-3xl font-bold font-mono text-dinoclass-spark">{product.price}</span>
+                  <span className="text-dinoclass-textSub text-sm">(3개월 수강권)</span>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <button
+                    onClick={() => handlePayment(0)}
+                    className="flex-1 flex items-center justify-center gap-2 bg-dinoclass-spark text-black font-bold py-3 px-6 rounded-xl hover:bg-yellow-400 transition-all hover:shadow-[0_0_15px_rgba(254,232,0,0.2)] active:scale-[0.98]"
+                  >
+                    <ShoppingCart size={18} /> 구매하기
+                  </button>
+                  <button 
+                    onClick={() => handleAddToCart(0)}
+                    className="flex items-center justify-center gap-2 bg-white border-2 border-zinc-200 text-black font-bold py-3 px-6 rounded-xl hover:border-dinoclass-spark hover:bg-zinc-50 transition-all"
+                  >
+                    장바구니 담기
+                  </button>
+                </div>
+              </div>
 
-          {/* CTA 버튼 */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            {isFree ? (
-              <button
-                onClick={handleFreeEnroll}
-                className="flex-1 flex items-center justify-center gap-3 bg-dinoclass-spark text-black font-bold py-4 px-8 rounded-xl text-lg hover:bg-yellow-400 transition-all hover:shadow-[0_0_24px_rgba(254,232,0,0.25)] active:scale-[0.98]"
-              >
-                <Rocket size={20} /> 무료로 수강하기
-              </button>
-            ) : (
-              <>
-                <button
-                  onClick={handlePayment}
-                  className="flex-1 flex items-center justify-center gap-3 bg-dinoclass-spark text-black font-bold py-4 px-8 rounded-xl text-lg hover:bg-yellow-400 transition-all hover:shadow-[0_0_24px_rgba(254,232,0,0.25)] active:scale-[0.98]"
-                >
-                  <ShoppingCart size={20} /> 구매하기
-                </button>
-                <button 
-                  onClick={handleAddToCart}
-                  className="flex items-center justify-center gap-2 bg-white border-2 border-zinc-200 text-black font-bold py-4 px-8 rounded-xl hover:border-dinoclass-spark hover:bg-zinc-50 transition-all"
-                >
-                  장바구니 담기
-                </button>
-              </>
-            )}
-          </div>
+              {/* 평생 수강권 카드 */}
+              <div className="p-5 border border-dinoclass-spark/30 rounded-2xl bg-dinoclass-spark/5 flex flex-col gap-4 relative overflow-hidden">
+                <div className="absolute top-0 right-0 bg-dinoclass-spark text-black text-xs font-bold px-3 py-1 rounded-bl-lg">추천</div>
+                <div className="flex items-baseline gap-3">
+                  <span className="text-3xl font-bold font-mono text-dinoclass-spark">{product.lifetimePrice}</span>
+                  <span className="text-dinoclass-textSub text-sm">(무기한 평생 수강권)</span>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <button
+                    onClick={() => handlePayment(1)}
+                    className="flex-1 flex items-center justify-center gap-2 bg-dinoclass-spark text-black font-bold py-3 px-6 rounded-xl hover:bg-yellow-400 transition-all hover:shadow-[0_0_15px_rgba(254,232,0,0.2)] active:scale-[0.98]"
+                  >
+                    <ShoppingCart size={18} /> 구매하기
+                  </button>
+                  <button 
+                    onClick={() => handleAddToCart(1)}
+                    className="flex items-center justify-center gap-2 bg-white border-2 border-zinc-200 text-black font-bold py-3 px-6 rounded-xl hover:border-dinoclass-spark hover:bg-zinc-50 transition-all"
+                  >
+                    장바구니 담기
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* 단일 상품 가격 */}
+              <div className="flex items-baseline gap-3 mb-8">
+                <span className="text-4xl font-bold font-mono text-dinoclass-spark">
+                  {product.price}
+                </span>
+                {product.category !== 'freebie' && product.category !== 'free_course' && (
+                  <span className="text-dinoclass-textSub text-sm">
+                    {product.category === 'vod' ? '(단건 결제)' : '(평생 소장)'}
+                  </span>
+                )}
+              </div>
+
+              {/* CTA 버튼 */}
+              <div className="flex flex-col sm:flex-row gap-3 mb-8">
+                {isFree ? (
+                  <button
+                    onClick={handleFreeEnroll}
+                    className="flex-1 flex items-center justify-center gap-3 bg-dinoclass-spark text-black font-bold py-4 px-8 rounded-xl text-lg hover:bg-yellow-400 transition-all hover:shadow-[0_0_24px_rgba(254,232,0,0.25)] active:scale-[0.98]"
+                  >
+                    <Rocket size={20} /> 무료로 수강하기
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => handlePayment(0)}
+                      className="flex-1 flex items-center justify-center gap-3 bg-dinoclass-spark text-black font-bold py-4 px-8 rounded-xl text-lg hover:bg-yellow-400 transition-all hover:shadow-[0_0_24px_rgba(254,232,0,0.25)] active:scale-[0.98]"
+                    >
+                      <ShoppingCart size={20} /> 구매하기
+                    </button>
+                    <button 
+                      onClick={() => handleAddToCart(0)}
+                      className="flex items-center justify-center gap-2 bg-white border-2 border-zinc-200 text-black font-bold py-4 px-8 rounded-xl hover:border-dinoclass-spark hover:bg-zinc-50 transition-all"
+                    >
+                      장바구니 담기
+                    </button>
+                  </>
+                )}
+              </div>
+            </>
+          )}
 
           {/* 안내 */}
           <div className="mt-6 bg-dinoclass-surface/50 rounded-xl p-4 border border-dinoclass-surface">
@@ -289,24 +359,37 @@ export default function ProductDetail() {
                 {parseDetailBlocks(product.detailContent).map((block) => (
                   <div key={block.id}>
                     {block.type === 'text' ? (
-                      <div className={`
-                        ${block.align === 'center' ? 'text-center' : block.align === 'right' ? 'text-right' : 'text-left'}
-                        ${block.size === 'h1' ? 'text-3xl font-bold mt-8 mb-4' : 
-                          block.size === 'h2' ? 'text-2xl font-bold mt-6 mb-3' : 'text-base mt-2 mb-2'}
-                      `}>
-                        {block.value.split('\n').map((line, i) => (
-                          line.trim() === ''
-                            ? <div key={i} className="h-4" />
-                            : <p key={i} className={`${block.size === 'p' || !block.size ? 'text-dinoclass-textMain leading-relaxed' : ''}`}>
-                                <span className={`${
-                                  block.highlight === 'yellow' ? 'bg-[#FEE800]/20 text-[#FEE800] px-1 rounded' :
-                                  block.highlight === 'green' ? 'bg-[#34D399]/20 text-[#34D399] px-1 rounded' : ''
-                                }`}>
-                                  {line}
-                                </span>
-                              </p>
-                        ))}
-                      </div>
+                      block.value.includes('<') && block.value.includes('>') ? (
+                        <div 
+                          dangerouslySetInnerHTML={{ __html: block.value }} 
+                          className="prose-detail-html text-dinoclass-textMain" 
+                        />
+                      ) : (
+                        <div className={`
+                          ${block.align === 'center' ? 'text-center' : block.align === 'right' ? 'text-right' : 'text-left'}
+                          ${block.size === 'h1' ? 'text-3xl font-bold mt-8 mb-4 text-dinoclass-textMain' : 
+                            block.size === 'h2' ? 'text-2xl font-bold mt-6 mb-3 text-dinoclass-textMain' : 'text-base mt-2 mb-2 text-dinoclass-textMain'}
+                        `}>
+                          {block.value.split('\n').map((line, i) => (
+                            line.trim() === ''
+                              ? <div key={i} className="h-4" />
+                              : <p key={i} className={`${block.size === 'p' || !block.size ? 'text-dinoclass-textMain leading-relaxed' : 'text-dinoclass-textMain'}`}>
+                                  <span 
+                                    style={{
+                                      background: block.highlight === 'yellow' 
+                                        ? 'linear-gradient(to top, #FEE800 40%, transparent 40%)' 
+                                        : block.highlight === 'green' 
+                                        ? 'linear-gradient(to top, #5ae0e2 40%, transparent 40%)' 
+                                        : 'transparent'
+                                    }}
+                                    className={block.highlight ? 'px-1' : ''}
+                                  >
+                                    {line}
+                                  </span>
+                                </p>
+                          ))}
+                        </div>
+                      )
                     ) : (
                       <div className="w-full flex justify-center rounded-xl overflow-hidden shadow-2xl border border-dinoclass-surface bg-zinc-950 my-6">
                         {block.value && (

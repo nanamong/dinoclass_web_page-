@@ -13,7 +13,7 @@ function parsePrice(priceStr: string): number {
 
 export default function CartPage() {
   const navigate = useNavigate()
-  const [cartItems, setCartItems] = useState<Product[]>([])
+  const [cartItems, setCartItems] = useState<(Product & { selectedOption?: { name: string; price: number } })[]>([])
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -31,7 +31,7 @@ export default function CartPage() {
     navigate('/checkout?isCart=true')
   }
 
-  const totalPrice = cartItems.reduce((sum, item) => sum + parsePrice(item.price), 0)
+  const totalPrice = cartItems.reduce((sum, item) => sum + (item.selectedOption ? item.selectedOption.price : parsePrice(item.price)), 0)
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-10 min-h-[70vh]">
@@ -95,7 +95,12 @@ export default function CartPage() {
                       {CATEGORY_LABELS[item.category]}
                     </span>
                     <h3 className="font-bold text-white leading-tight">{item.name}</h3>
-                    <p className="text-dinoclass-spark font-bold mt-1 font-mono">{item.price}</p>
+                    {item.selectedOption && (
+                      <p className="text-sm text-dinoclass-textSub mt-1">옵션: {item.selectedOption.name}</p>
+                    )}
+                    <p className="text-dinoclass-spark font-bold mt-1 font-mono">
+                      {item.selectedOption ? `${item.selectedOption.price.toLocaleString()}원` : item.price}
+                    </p>
                   </div>
                   <button 
                     onClick={() => handleRemove(item.id)}

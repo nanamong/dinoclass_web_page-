@@ -459,9 +459,9 @@ export default function HomePage() {
             </div>
             <div className="space-y-2 max-w-sm leading-relaxed">
               <p>상호 : 디노클래스 | 대표 : 권윤혜</p>
-              <p>사업자등록번호 : [사업자등록번호 입력]</p>
-              <p>통신판매업신고번호 : [통신판매업신고번호 입력]</p>
-              <p>이메일 : [이메일 주소 입력]</p>
+              <p>사업자등록번호 : 512-10-52242</p>
+              <p>통신판매신고번호 : 제 2021-강원 원주-00833 호</p>
+              <p>이메일 : a92151665@gmail.com</p>
             </div>
           </div>
           

@@ -14,7 +14,7 @@ import { getSubscribers, deleteSubscriber, type Subscriber } from './newsletterS
 import { compressImage } from './utils/imageCompressor'
 import DetailBlockEditor from './components/DetailBlockEditor'
 
-const CATEGORIES: ProductCategory[] = ['ebook', 'vod', 'freebie']
+const CATEGORIES: ProductCategory[] = ['ebook', 'vod', 'freebie', 'free_course']
 
 export default function AdminPanel() {
   /* ─── state ─── */
@@ -22,6 +22,7 @@ export default function AdminPanel() {
   const [category, setCategory] = useState<ProductCategory>('ebook')
   const [name, setName] = useState('')
   const [price, setPrice] = useState('')
+  const [lifetimePrice, setLifetimePrice] = useState('')
   const [description, setDescription] = useState('')
   const [videoUrl, setVideoUrl] = useState('')
   /* ─── 에디터 state ─── */
@@ -39,6 +40,7 @@ export default function AdminPanel() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [editName, setEditName] = useState('')
   const [editPrice, setEditPrice] = useState('')
+  const [editLifetimePrice, setEditLifetimePrice] = useState('')
   const [editDescription, setEditDescription] = useState('')
   const [editDetailBlocks, setEditDetailBlocks] = useState<DetailBlock[]>([])
   const [editImageUrl, setEditImageUrl] = useState('')
@@ -76,10 +78,46 @@ export default function AdminPanel() {
     if (savedUrl) setWebhookUrl(savedUrl)
   }, [])
 
-  const handleSaveWebhook = () => {
-    localStorage.setItem('google_sheet_webhook_url', webhookUrl.trim())
+  const handleSaveWebhook = async () => {
+    const url = webhookUrl.trim()
+    localStorage.setItem('google_sheet_webhook_url', url)
     setShowWebhookModal(false)
-    showToast('✅ 구글 시트 연동 URL이 저장되었습니다!')
+    showToast('✅ 구글 시트 연동 URL이 저장되었습니다! 테스트 데이터를 시트로 전송했습니다.')
+
+    if (url) {
+      try {
+        // 뉴스레터 테스트 데이터 전송
+        await fetch(url, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'newsletter',
+            createdAt: new Date().toISOString(),
+            name: '테스트(뉴스레터)',
+            phone: '010-1234-5678',
+            email: 'test@example.com'
+          })
+        })
+        // 구매 내역 테스트 데이터 전송
+        await fetch(url, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'purchase',
+            createdAt: new Date().toISOString(),
+            customerName: '테스트(구매자)',
+            customerEmail: 'buyer@example.com',
+            orderName: '테스트 상품',
+            amount: 50000,
+            orderId: 'TEST-123456'
+          })
+        })
+      } catch (e) {
+        console.error('Test webhook failed', e)
+      }
+    }
   }
 
   /* ─── handlers ─── */
@@ -140,12 +178,13 @@ export default function AdminPanel() {
       category,
       name: name.trim(),
       price: price.trim(),
+      lifetimePrice: lifetimePrice.trim() || undefined,
       description: description.trim(),
       detailContent: JSON.stringify(detailBlocks),
       imageUrl: imageUrl.trim(),
       videoUrl: videoUrl.trim(),
     })
-    setName(''); setPrice(''); setDescription(''); setVideoUrl(''); setDetailBlocks([{ id: crypto.randomUUID(), type: 'text', value: '' }]); setImageUrl('')
+    setName(''); setPrice(''); setLifetimePrice(''); setDescription(''); setVideoUrl(''); setDetailBlocks([{ id: crypto.randomUUID(), type: 'text', value: '' }]); setImageUrl('')
     await reload()
     showToast(`✅ [${CATEGORY_LABELS[category]}] 상품이 등록되었습니다!`)
   }
@@ -160,6 +199,7 @@ export default function AdminPanel() {
     setEditingProduct(product)
     setEditName(product.name)
     setEditPrice(product.price)
+    setEditLifetimePrice(product.lifetimePrice || '')
     setEditDescription(product.description)
     setEditDetailBlocks(parseDetailBlocks(product.detailContent))
     setEditImageUrl(product.imageUrl)
@@ -177,6 +217,7 @@ export default function AdminPanel() {
       category: editCategory,
       name: editName.trim(),
       price: editPrice.trim(),
+      lifetimePrice: editLifetimePrice.trim() || undefined,
       description: editDescription.trim(),
       detailContent: JSON.stringify(editDetailBlocks),
       imageUrl: editImageUrl.trim(),
@@ -220,7 +261,7 @@ export default function AdminPanel() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] bg-dinoclass-surface border border-dinoclass-spark/40 text-white px-8 py-4 rounded-xl shadow-2xl text-sm font-medium"
+            className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] bg-dinoclass-surface border border-dinoclass-spark/40 text-zinc-900 px-8 py-4 rounded-xl shadow-2xl text-sm font-medium"
           >
             {toast}
           </motion.div>
@@ -255,7 +296,7 @@ export default function AdminPanel() {
         <button
           onClick={() => setActiveTab('products')}
           className={`px-6 py-3 rounded-xl font-bold transition-all border ${
-            activeTab === 'products' ? 'bg-dinoclass-spark text-black border-dinoclass-spark' : 'text-dinoclass-textSub border-dinoclass-surface hover:bg-dinoclass-surface/50 hover:border-dinoclass-spark/50 hover:text-white'
+            activeTab === 'products' ? 'bg-dinoclass-spark text-black border-dinoclass-spark' : 'bg-white text-zinc-600 border-dinoclass-spark/40 hover:bg-dinoclass-spark/10 hover:border-dinoclass-spark hover:text-black'
           }`}
         >
           📦 상품 DB 관리
@@ -263,7 +304,7 @@ export default function AdminPanel() {
         <button
           onClick={() => { setActiveTab('orders'); reloadOrders(); }}
           className={`px-6 py-3 rounded-xl font-bold transition-all border ${
-            activeTab === 'orders' ? 'bg-dinoclass-spark text-black border-dinoclass-spark' : 'text-dinoclass-textSub border-dinoclass-surface hover:bg-dinoclass-surface/50 hover:border-dinoclass-spark/50 hover:text-white'
+            activeTab === 'orders' ? 'bg-dinoclass-spark text-black border-dinoclass-spark' : 'bg-white text-zinc-600 border-dinoclass-spark/40 hover:bg-dinoclass-spark/10 hover:border-dinoclass-spark hover:text-black'
           }`}
         >
           💳 결제 내역 관리
@@ -271,7 +312,7 @@ export default function AdminPanel() {
         <button
           onClick={() => { setActiveTab('newsletters'); reloadNewsletters(); }}
           className={`px-6 py-3 rounded-xl font-bold transition-all border ${
-            activeTab === 'newsletters' ? 'bg-dinoclass-spark text-black border-dinoclass-spark' : 'text-dinoclass-textSub border-dinoclass-surface hover:bg-dinoclass-surface/50 hover:border-dinoclass-spark/50 hover:text-white'
+            activeTab === 'newsletters' ? 'bg-dinoclass-spark text-black border-dinoclass-spark' : 'bg-white text-zinc-600 border-dinoclass-spark/40 hover:bg-dinoclass-spark/10 hover:border-dinoclass-spark hover:text-black'
           }`}
         >
           📧 뉴스레터 구독자 관리
@@ -335,7 +376,7 @@ export default function AdminPanel() {
               <div>
                 <label className="admin-label flex items-center gap-2 mb-2">
                   <DollarSign size={14} className="text-dinoclass-spark" />
-                  가격 <span className="text-red-400">*</span>
+                  {category === 'vod' ? '가격 (3개월 수강권)' : '가격'} <span className="text-red-400">*</span>
                 </label>
                 <input
                   id="product-price"
@@ -346,6 +387,23 @@ export default function AdminPanel() {
                   className="admin-input"
                 />
               </div>
+
+              {category === 'vod' && (
+                <div>
+                  <label className="admin-label flex items-center gap-2 mb-2">
+                    <DollarSign size={14} className="text-dinoclass-spark" />
+                    무기한 평생 수강권 가격 <span className="text-dinoclass-textSub text-xs font-normal ml-2">(선택 - 입력 시 평생권 옵션 자동 생성)</span>
+                  </label>
+                  <input
+                    id="product-lifetime-price"
+                    type="text"
+                    placeholder="예) 59,000원"
+                    value={lifetimePrice}
+                    onChange={(e) => setLifetimePrice(e.target.value)}
+                    className="admin-input"
+                  />
+                </div>
+              )}
 
               <div>
                 <label className="admin-label flex items-center gap-2 mb-2">
@@ -366,32 +424,8 @@ export default function AdminPanel() {
                 <div className="flex justify-between items-center mb-2">
                   <label className="admin-label flex items-center gap-2">
                     <Image size={14} className="text-dinoclass-spark" />
-                    상품 이미지
+                    상품 대표 이미지
                   </label>
-                  <div className="flex gap-1 bg-dinoclass-background/60 rounded-lg p-0.5 border border-dinoclass-surface">
-                    <button
-                      type="button"
-                      onClick={() => setImageMode('upload')}
-                      className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-all ${
-                        imageMode === 'upload'
-                          ? 'bg-dinoclass-spark text-black'
-                          : 'text-dinoclass-textSub hover:text-white'
-                      }`}
-                    >
-                      파일 업로드
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setImageMode('url')}
-                      className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-all ${
-                        imageMode === 'url'
-                          ? 'bg-dinoclass-spark text-black'
-                          : 'text-dinoclass-textSub hover:text-white'
-                      }`}
-                    >
-                      웹 링크 입력
-                    </button>
-                  </div>
                 </div>
 
                 {imageMode === 'upload' ? (
@@ -510,7 +544,7 @@ export default function AdminPanel() {
                 )}
               </div>
 
-              {(category === 'vod' || category === 'freebie') && (
+              {(category === 'vod' || category === 'freebie' || category === 'free_course') && (
                 <div>
                   <label htmlFor="product-video-url" className="admin-label flex items-center gap-2 mb-1.5">
                     <span className="text-dinoclass-spark">▶</span> Vimeo 동영상 링크 (선택)
@@ -752,7 +786,7 @@ export default function AdminPanel() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-dinoclass-surface">
-                  {newsletters.slice().reverse().map((sub) => (
+                  {newsletters.map((sub) => (
                     <tr key={sub.id} className="hover:bg-dinoclass-surface/20 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap text-dinoclass-textSub">
                         {new Date(sub.createdAt).toLocaleString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
@@ -790,11 +824,11 @@ export default function AdminPanel() {
             className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto bg-dinoclass-background border border-dinoclass-surface rounded-2xl shadow-2xl"
           >
             <div className="sticky top-0 bg-dinoclass-background/95 backdrop-blur-md px-6 py-4 border-b border-dinoclass-surface flex items-center justify-between z-10">
-              <h3 className="font-bold text-white text-lg flex items-center gap-2">
+              <h3 className="font-bold text-zinc-900 text-lg flex items-center gap-2">
                 <Pencil size={16} className="text-dinoclass-spark" />
                 상품 수정
               </h3>
-              <button onClick={() => setEditingProduct(null)} className="p-1.5 rounded-lg hover:bg-dinoclass-surface text-dinoclass-textSub hover:text-white transition-all">
+              <button onClick={() => setEditingProduct(null)} className="p-1.5 rounded-lg hover:bg-dinoclass-surface text-dinoclass-textSub hover:text-zinc-900 transition-all">
                 <X size={18} />
               </button>
             </div>
@@ -813,9 +847,15 @@ export default function AdminPanel() {
                 <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="admin-input" />
               </div>
               <div>
-                <label className="admin-label flex items-center gap-2 mb-2"><DollarSign size={14} className="text-dinoclass-spark" /> 가격</label>
+                <label className="admin-label flex items-center gap-2 mb-2"><DollarSign size={14} className="text-dinoclass-spark" /> {editCategory === 'vod' ? '가격 (3개월 수강권)' : '가격'}</label>
                 <input type="text" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} className="admin-input" />
               </div>
+              {editCategory === 'vod' && (
+                <div>
+                  <label className="admin-label flex items-center gap-2 mb-2"><DollarSign size={14} className="text-dinoclass-spark" /> 무기한 평생 수강권 가격</label>
+                  <input type="text" value={editLifetimePrice} onChange={(e) => setEditLifetimePrice(e.target.value)} className="admin-input" placeholder="선택사항" />
+                </div>
+              )}
               <div>
                 <label className="admin-label flex items-center gap-2 mb-2"><FileText size={14} className="text-dinoclass-spark" /> 한 줄 설명</label>
                 <input type="text" value={editDescription} onChange={(e) => setEditDescription(e.target.value)} className="admin-input" />
@@ -848,10 +888,10 @@ export default function AdminPanel() {
             className="relative w-full max-w-md bg-dinoclass-background border border-dinoclass-surface rounded-2xl shadow-2xl p-6"
           >
             <div className="flex justify-between items-center mb-6">
-              <h3 className="font-bold text-white text-lg flex items-center gap-2">
+              <h3 className="font-bold text-zinc-900 text-lg flex items-center gap-2">
                 📊 구글 시트 웹훅 연동
               </h3>
-              <button onClick={() => setShowWebhookModal(false)} className="text-dinoclass-textSub hover:text-white">
+              <button onClick={() => setShowWebhookModal(false)} className="text-dinoclass-textSub hover:text-zinc-900">
                 <X size={20} />
               </button>
             </div>
@@ -866,7 +906,7 @@ export default function AdminPanel() {
               placeholder="https://script.google.com/macros/s/.../exec"
               value={webhookUrl}
               onChange={e => setWebhookUrl(e.target.value)}
-              className="w-full bg-dinoclass-surface border border-dinoclass-surface rounded-xl px-4 py-3 mb-6 focus:outline-none focus:border-dinoclass-spark transition-colors text-white text-sm"
+              className="w-full bg-dinoclass-surface border border-dinoclass-surface rounded-xl px-4 py-3 mb-6 focus:outline-none focus:border-dinoclass-spark transition-colors text-zinc-900 text-sm"
             />
             
             <button 

@@ -108,11 +108,16 @@ export default function MyPage() {
                 </div>
                 
                 <div className="p-6 flex flex-col flex-grow">
-                  <h3 className="font-bold text-lg mb-4 line-clamp-2 leading-tight">
+                  <h3 className="font-bold text-lg mb-2 line-clamp-2 leading-tight">
                     {course.product.name}
                   </h3>
+                  {course.selectedOption && (
+                    <p className="text-sm text-dinoclass-textSub mb-4">
+                      {course.selectedOption.name}
+                    </p>
+                  )}
                   <div className="mt-auto">
-                    {(course.product.category === 'vod' || course.product.category === 'freebie') ? (
+                    {(course.product.category === 'vod' || course.product.category === 'freebie' || course.product.category === 'free_course') ? (
                       <button
                         onClick={() => navigate(`/course/${course.product.id}`)}
                         className="w-full bg-dinoclass-spark text-black font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-yellow-400 hover:shadow-lg hover:-translate-y-0.5 transition-all"

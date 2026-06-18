@@ -5,6 +5,8 @@ import { CheckCircle2, ArrowLeft, Rocket } from 'lucide-react'
 import { clearCart, getCartProducts } from './cartStore'
 import { addOrder } from './orderStore'
 import { getProductById, type Product } from './productStore'
+import { useMyCourseStore } from './myCourseStore'
+import { useAuthStore } from './authStore'
 
 export default function PaymentSuccess() {
   const navigate = useNavigate()
@@ -36,7 +38,11 @@ export default function PaymentSuccess() {
         } else if (productId) {
           const prod = await getProductById(productId)
           if (prod) {
-            items = [prod]
+            let selectedOption = undefined
+            if (prod.category === 'vod' && prod.lifetimePrice && searchParams.get('option') === 'lifetime') {
+              selectedOption = { name: '무기한 평생 수강권', price: Number(prod.lifetimePrice.replace(/[^0-9]/g, '')) }
+            }
+            items = [{ ...prod, selectedOption }] as any
             orderName = prod.name
           }
         }
@@ -52,6 +58,35 @@ export default function PaymentSuccess() {
 
         if (isCart) {
           clearCart()
+        }
+
+        // 수강 목록에 추가
+        items.forEach((item: any) => {
+          useMyCourseStore.getState().enroll(item, item.selectedOption)
+        })
+
+        // 구글 시트 웹훅 연동 전송 (유료 상품 구매자)
+        try {
+          const webhookUrl = localStorage.getItem('google_sheet_webhook_url');
+          if (webhookUrl && webhookUrl.trim() && Number(amt) > 0) { // 무료 강의(0원)는 제외하려면 금액 체크
+            const payload = {
+              type: 'purchase',
+              orderId: oid,
+              amount: Number(amt),
+              orderName: orderName,
+              customerName: useAuthStore.getState().user?.name || '비회원',
+              customerEmail: useAuthStore.getState().user?.email || '알 수 없음',
+              createdAt: new Date().toISOString()
+            };
+            fetch(webhookUrl.trim(), {
+              method: 'POST',
+              mode: 'no-cors',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            }).catch(err => console.error('Purchase webhook send failed:', err));
+          }
+        } catch (e) {
+          console.error('Purchase webhook error:', e);
         }
       }
       processOrder();

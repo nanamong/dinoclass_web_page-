@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Routes, Route, useNavigate } from 'react-router-dom'
+import { Routes, Route, useNavigate, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Rocket, Mail, ChevronRight, CheckCircle2, ChevronDown, Wrench, ShoppingCart, Gift } from 'lucide-react'
 import { getProductsByCategory, type Product } from './productStore'
@@ -15,6 +15,8 @@ import CourseViewer from './CourseViewer'
 import { useAuthStore } from './authStore'
 import Toast from './components/Toast'
 import NewsletterModal from './components/NewsletterModal'
+import TermsPage from './TermsPage'
+import PrivacyPage from './PrivacyPage'
 
 declare global {
   namespace JSX {
@@ -40,9 +42,9 @@ function DynamicCard({ product }: { product: Product }) {
       onClick={() => navigate(`/products/${product.id}`)}
       className="hover-lift bg-dinoclass-background rounded-2xl overflow-hidden cursor-pointer flex flex-col border border-dinoclass-surface hover:border-dinoclass-spark/50"
     >
-      <div className="aspect-square object-cover bg-zinc-800/80 overflow-hidden relative">
-        {product.imageUrl && <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />}
-        <div className="absolute top-3 left-3 bg-dinoclass-spark text-black text-[10px] font-bold px-2 py-0.5 rounded">NEW</div>
+      <div className="relative w-full pt-[100%] bg-zinc-800/80 overflow-hidden">
+        {product.imageUrl && <img src={product.imageUrl} alt={product.name} className="absolute inset-0 w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />}
+        <div className="absolute top-3 left-3 bg-dinoclass-spark text-black text-[10px] font-bold px-2 py-0.5 rounded z-10">NEW</div>
       </div>
       <div className="p-6 flex flex-col h-full">
         <h3 className="font-bold text-lg mb-1 flex-grow">{product.name}</h3>
@@ -63,6 +65,7 @@ function HomeContent({ setIsNewsletterOpen }: { setIsNewsletterOpen: (v: boolean
   const [ebookProducts, setEbookProducts] = useState<Product[]>([])
   const [vodProducts, setVodProducts] = useState<Product[]>([])
   const [freebieProducts, setFreebieProducts] = useState<Product[]>([])
+  const [freeCourseProducts, setFreeCourseProducts] = useState<Product[]>([])
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const [msgPhase, setMsgPhase] = useState(0) // 0: Idle, 1: Right Msg, 2: Idle, 3: Left Msg
 
@@ -73,16 +76,32 @@ function HomeContent({ setIsNewsletterOpen }: { setIsNewsletterOpen: (v: boolean
     return () => clearInterval(msgInterval)
   }, [])
 
+  // Handle hash scrolling for SPA navigation
+  useEffect(() => {
+    if (window.location.hash) {
+      const element = document.querySelector(window.location.hash)
+      if (element) {
+        setTimeout(() => {
+          element.scrollIntoView({ behavior: 'smooth' })
+        }, 100)
+      }
+    } else {
+      window.scrollTo(0, 0)
+    }
+  }, [])
+
   useEffect(() => {
     let isMounted = true;
     const load = async () => {
       const ebooks = await getProductsByCategory('ebook')
       const vods = await getProductsByCategory('vod')
       const freebies = await getProductsByCategory('freebie')
+      const freeCourses = await getProductsByCategory('free_course')
       if (isMounted) {
         setEbookProducts(ebooks)
         setVodProducts(vods)
         setFreebieProducts(freebies)
+        setFreeCourseProducts(freeCourses)
       }
     }
     load()
@@ -299,8 +318,8 @@ function HomeContent({ setIsNewsletterOpen }: { setIsNewsletterOpen: (v: boolean
                   onClick={() => navigate(`/products/static-vod-${i}`)}
                   className="hover-lift bg-dinoclass-surface rounded-2xl overflow-hidden cursor-pointer flex flex-col h-full border border-transparent hover:border-dinoclass-spark/50"
                 >
-                  <div className="aspect-square object-cover bg-zinc-800 relative overflow-hidden">
-                    <img src={`/vod_dummy_${i}.png`} alt={`VOD Class ${i}`} className="w-full h-full object-cover" />
+                  <div className="relative w-full pt-[100%] bg-zinc-800 overflow-hidden">
+                    <img src={`/vod_dummy_${i}.png`} alt={`VOD Class ${i}`} className="absolute inset-0 w-full h-full object-cover" />
                     <div className="absolute top-4 right-4 bg-dinoclass-spark text-black text-xs font-bold px-2 py-1 rounded">BEST</div>
                   </div>
                   <div className="p-6 flex flex-col flex-grow">
@@ -342,8 +361,8 @@ function HomeContent({ setIsNewsletterOpen }: { setIsNewsletterOpen: (v: boolean
                   onClick={() => navigate(`/products/${book.id}`)}
                   className="hover-lift bg-dinoclass-background rounded-2xl overflow-hidden cursor-pointer flex flex-col h-full border border-dinoclass-surface hover:border-dinoclass-spark/50"
                 >
-                  <div className="aspect-square object-cover bg-zinc-800/80 relative overflow-hidden">
-                    <img src={`/ebook_dummy_${book.index}.png`} alt={book.title} className="w-full h-full object-cover" />
+                  <div className="relative w-full pt-[100%] bg-zinc-800/80 overflow-hidden">
+                    <img src={`/ebook_dummy_${book.index}.png`} alt={book.title} className="absolute inset-0 w-full h-full object-cover" />
                   </div>
                   <div className="p-6 flex flex-col flex-grow">
                     <h3 className="font-bold text-lg mb-2 flex-grow">{book.title}</h3>
@@ -383,8 +402,8 @@ function HomeContent({ setIsNewsletterOpen }: { setIsNewsletterOpen: (v: boolean
                   onClick={() => navigate(`/products/${course.id}`)}
                   className="hover-lift bg-dinoclass-surface rounded-2xl overflow-hidden cursor-pointer flex flex-col h-full border border-transparent hover:border-dinoclass-spark/50"
                 >
-                  <div className="aspect-square object-cover bg-zinc-800 relative overflow-hidden">
-                    <img src={`/free_dummy_${course.index}.png`} alt={course.title} className="w-full h-full object-cover" />
+                  <div className="relative w-full pt-[100%] bg-zinc-800 overflow-hidden">
+                    <img src={`/free_dummy_${course.index}.png`} alt={course.title} className="absolute inset-0 w-full h-full object-cover" />
                     <div className="absolute top-4 right-4 bg-dinoclass-spark text-black text-xs font-bold px-2 py-1 rounded">FREE</div>
                   </div>
                   <div className="p-6 flex flex-col flex-grow">
@@ -399,6 +418,10 @@ function HomeContent({ setIsNewsletterOpen }: { setIsNewsletterOpen: (v: boolean
                   </div>
                 </div>
               ))}
+              {/* 관리자 등록 무료 강의 */}
+              <AnimatePresence>
+                {freeCourseProducts.map((p) => <DynamicCard key={p.id} product={p} />)}
+              </AnimatePresence>
             </div>
           </SectionFadeIn>
         </div>
@@ -445,19 +468,22 @@ function HomeContent({ setIsNewsletterOpen }: { setIsNewsletterOpen: (v: boolean
       <section id="faq" className="py-24 bg-premium-grey">
         <div className="max-w-3xl mx-auto px-6">
           <SectionFadeIn>
-            <div className="text-center mb-16"><h2 className="text-3xl md:text-4xl font-bold">자주 묻는 질문</h2></div>
-            <div className="space-y-4">
+            <div className="text-center mb-16"><h2 className="text-3xl md:text-4xl font-bold font-mono">FAQ</h2></div>
+            <div className="space-y-3">
               {[
                 { q: "초보자도 수익을 낼 수 있나요?", a: "네, 기초부터 하나하나 차근차근 알려드리기 때문에 완전 초보자도 충분히 수익 파이프라인을 구축할 수 있습니다." },
-                { q: "결제하면 수강 기간은 어떻게 되나요?", a: "디노클래스의 모든 강의와 전자책은 '단건 결제'로 이루어집니다. 한 번 결제하시면 평생 무제한으로 소장하고 수강하실 수 있습니다." },
-                { q: "환불 규정은 어떻게 되나요?", a: "결제 즉시 전자책과 모든 자료를 평생 소장하실 수 있는 디지털 상품의 특성상, 결제 이후에는 환불이 어렵습니다. 신중히 고민 후 결제해 주세요." },
+                { q: "결제하면 수강 기간은 어떻게 되나요?", a: "전자책의 경우 한 번 결제하시면 다운로드를 통해 평생 소장하실 수 있습니다. VOD 강의의 경우 원하시는 수강 목표와 예산에 맞게 '3개월 수강권'과 '무기한 평생 수강권' 중 하나를 선택하실 수 있습니다." },
+                { q: "환불 규정은 어떻게 되나요?", a: "결제 즉시 파일이 제공되거나 열람이 가능한 디지털 상품의 특성상, 결제 완료 후에는 원칙적으로 환불이 어렵습니다. 구매하시기 전에 커리큘럼과 안내 사항을 충분히 확인하신 후 신중하게 결정해 주세요." },
+                { q: "모바일이나 태블릿에서도 수강이 가능한가요?", a: "물론입니다! 스마트폰, 태블릿, 노트북, PC 등 인터넷이 연결된 모든 스마트 기기에서 웹사이트에 접속하여 언제 어디서나 편하게 강의를 시청하실 수 있습니다." },
+                { q: "해외에서도 결제 및 수강이 가능한가요?", a: "네, 전 세계 어디서든 인터넷만 연결되어 있다면 끊김 없이 원활하게 강의를 시청하실 수 있습니다. 다만, 현재 결제 시스템상 국내에서 발급된 신용/체크카드로만 결제가 가능한 점 양해 부탁드립니다." },
+                { q: "무료 웰컴 선물 키트는 언제 어떻게 받나요?", a: "메인 화면 하단이나 팝업창에서 무료 뉴스레터를 구독하시면, 입력해주신 이메일 주소로 즉시 웰컴 선물 키트가 자동 발송됩니다. 혹시 도착하지 않았다면 스팸 메일함이나 프로모션 메일함을 꼭 확인해 주세요!" },
               ].map((faq, i) => (
                 <div key={i} className="bg-dinoclass-background border border-dinoclass-surface rounded-xl overflow-hidden">
-                  <button onClick={() => toggleFaq(i)} className="w-full flex items-center justify-between p-6 text-left hover:bg-dinoclass-surface/50 transition-colors">
+                  <button onClick={() => toggleFaq(i)} className="w-full flex items-center justify-between px-6 py-3.5 text-left hover:bg-dinoclass-surface/50 transition-colors">
                     <span className="font-bold">{faq.q}</span>
                     <ChevronDown className={`transform transition-transform ${openFaq === i ? 'rotate-180 text-dinoclass-spark' : 'text-dinoclass-textSub'}`} />
                   </button>
-                  {openFaq === i && <div className="p-6 pt-0 text-dinoclass-textSub">{faq.a}</div>}
+                  {openFaq === i && <div className="px-6 pb-3.5 pt-0 text-dinoclass-textSub">{faq.a}</div>}
                 </div>
               ))}
             </div>
@@ -471,28 +497,31 @@ function HomeContent({ setIsNewsletterOpen }: { setIsNewsletterOpen: (v: boolean
           <div className="max-w-5xl mx-auto bg-dinoclass-surface rounded-3xl overflow-hidden relative z-10 border border-dinoclass-spark/20 flex flex-col md:flex-row">
             
             {/* 좌측: 움직이는 메일 아이콘 영역 */}
-            <div className="w-full md:w-1/2 bg-zinc-800/30 flex items-center justify-center p-16 md:p-0 min-h-[300px]">
+            <div className="w-full md:w-1/2 bg-black flex items-center justify-center p-16 md:p-0 min-h-[300px] relative">
+              {/* 투명막 (배경 톤다운) */}
+              <div className="absolute inset-0 bg-white/10 z-0 pointer-events-none"></div>
+              
               <motion.div 
                 animate={{ x: [0, 5, -2, 3, 0] }} 
                 transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
-                className="relative flex items-center"
+                className="relative z-10 flex items-center"
               >
                 {/* 스피드 라인 (달려오는 효과) */}
                 <div className="absolute -left-12 flex flex-col gap-2.5">
-                  <motion.div animate={{ width: [15, 30, 15], opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 0.6 }} className="h-1.5 bg-dinoclass-textSub rounded-full" />
-                  <motion.div animate={{ width: [25, 45, 25], opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.15 }} className="h-1.5 bg-dinoclass-textSub rounded-full" />
-                  <motion.div animate={{ width: [10, 20, 10], opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.3 }} className="h-1.5 bg-dinoclass-textSub rounded-full" />
+                  <motion.div animate={{ width: [15, 30, 15], opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 0.6 }} className="h-1.5 bg-dinoclass-spark/50 rounded-full" />
+                  <motion.div animate={{ width: [25, 45, 25], opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.15 }} className="h-1.5 bg-dinoclass-spark/50 rounded-full" />
+                  <motion.div animate={{ width: [10, 20, 10], opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.3 }} className="h-1.5 bg-dinoclass-spark/50 rounded-full" />
                 </div>
                 
-                <Mail className="w-24 h-24 md:w-32 md:h-32 text-dinoclass-spark drop-shadow-[0_0_15px_rgba(254,232,0,0.3)] ml-4" strokeWidth={1.5} />
+                <Mail className="w-24 h-24 md:w-32 md:h-32 text-dinoclass-spark drop-shadow-[0_0_15px_rgba(90,224,226,0.4)] ml-4" strokeWidth={1.5} />
               </motion.div>
             </div>
 
             {/* 우측: 텍스트 및 버튼 영역 */}
             <div className="w-full md:w-1/2 p-12 md:p-16 flex flex-col justify-center text-left">
-              <h2 className="text-3xl md:text-4xl font-bold mb-6 text-white">디노클래스의 뉴스레터</h2>
+              <h2 className="text-3xl md:text-4xl font-bold mb-6 text-dinoclass-textMain">디노클래스의 뉴스레터</h2>
               <p className="text-dinoclass-textSub text-lg mb-10 leading-relaxed">
-                가장 빨리 수익화하는 방법, 최신 노하우를 일주일에 한 번씩 메일로 받아보세요!
+                지식 창업의 핵심 노하우와 가장 확실한 수익화 전략을 뉴스레터로 빠르게 전해드립니다!
               </p>
               <div>
                 <button 
@@ -552,13 +581,13 @@ export default function App() {
           </div>
           <nav className="hidden md:flex items-center gap-8 text-zinc-500 font-light text-[15px] -mt-0.5">
             {!isAdmin && (<>
-              <a href="/" className="hover:text-zinc-900 transition-colors">홈</a>
-              <a href="/#gifts" className="hover:text-zinc-900 transition-colors">웰컴선물키트</a>
-              <a href="/#vod" className="hover:text-zinc-900 transition-colors">VOD 강의</a>
-              <a href="/#ebook" className="hover:text-zinc-900 transition-colors">전자책</a>
-              <a href="/#free-course" className="hover:text-zinc-900 transition-colors">무료 강의</a>
-              <a href="/#reviews" className="hover:text-zinc-900 transition-colors">수강생 후기</a>
-              <a href="/#faq" className="hover:text-zinc-900 transition-colors">FAQ</a>
+              <a href="/" className="hover:text-dinoclass-spark hover:font-bold transition-all">홈</a>
+              <a href="/#gifts" className="hover:text-dinoclass-spark hover:font-bold transition-all">웰컴선물키트</a>
+              <a href="/#vod" className="hover:text-dinoclass-spark hover:font-bold transition-all">VOD 강의</a>
+              <a href="/#ebook" className="hover:text-dinoclass-spark hover:font-bold transition-all">전자책</a>
+              <a href="/#free-course" className="hover:text-dinoclass-spark hover:font-bold transition-all">무료 강의</a>
+              <a href="/#reviews" className="hover:text-dinoclass-spark hover:font-bold transition-all">수강생 후기</a>
+              <a href="/#faq" className="hover:text-dinoclass-spark hover:font-bold transition-all">FAQ</a>
             </>)}
           </nav>
           <div className="flex gap-2 items-center -mt-0.5">
@@ -624,6 +653,8 @@ export default function App() {
             <Route path="/payment/fail" element={<PaymentSuccess />} />
             <Route path="/mypage" element={<MyPage />} />
             <Route path="/course/:id" element={<CourseViewer />} />
+            <Route path="/terms" element={<TermsPage />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
           </Routes>
         )}
       </main>
@@ -632,18 +663,18 @@ export default function App() {
       <footer className="bg-black py-12 border-t border-zinc-900 mt-auto">
         <div className="max-w-7xl mx-auto px-6 text-dinoclass-textSub text-sm flex flex-col md:flex-row justify-between gap-8">
           <div>
-            <div className="flex items-center gap-2 text-white mb-6"><Rocket size={20} /><span className="text-xl font-bold tracking-tight">디노클래스</span></div>
+            <div className="flex items-center gap-2 text-white mb-6"><span className="text-xl font-bold tracking-tight">디노클래스</span></div>
             <div className="space-y-2 max-w-sm leading-relaxed">
               <p>상호 : 디노클래스 | 대표 : 권윤혜</p>
-              <p>사업자등록번호 : [사업자등록번호 입력]</p>
-              <p>통신판매업신고번호 : [통신판매업신고번호 입력]</p>
-              <p>이메일 : [이메일 주소 입력]</p>
+              <p>사업자등록번호 : 512-10-52242</p>
+              <p>통신판매신고번호 : 제 2021-강원 원주-00833 호</p>
+              <p>이메일 : a92151665@gmail.com</p>
             </div>
           </div>
           <div className="flex flex-col md:items-end justify-between">
             <div className="flex gap-6 mb-8 text-white font-medium">
-              <a href="#" className="hover:text-dinoclass-spark transition-colors">이용약관</a>
-              <a href="#" className="hover:text-dinoclass-spark transition-colors">개인정보처리방침</a>
+              <Link to="/terms" className="hover:text-dinoclass-spark transition-colors">이용약관</Link>
+              <Link to="/privacy" className="hover:text-dinoclass-spark transition-colors">개인정보처리방침</Link>
             </div>
             <div className="text-left md:text-right">
               <p className="mb-2 text-zinc-500">결제 즉시 전자책과 모든 자료를 평생 소장하실 수 있는 디지털 상품의 특성상,<br className="hidden md:block"/>결제 이후에는 환불이 어렵습니다. 구매 전 커리큘럼을 충분히 살펴보시길 권해 드려요^^</p>

@@ -3,6 +3,66 @@ import { Image as ImageIcon, X, AlignLeft, AlignCenter, AlignRight, PaintBucket,
 import { type DetailBlock } from '../productStore';
 import { compressImage } from '../utils/imageCompressor';
 
+/* ─── WYSIWYG 텍스트 에디터 블록 ─── */
+const TextEditorBlock = ({ block, onChange, onFocus }: { block: DetailBlock, onChange: (val: string) => void, onFocus: () => void }) => {
+  const divRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (divRef.current && divRef.current.innerHTML !== block.value) {
+      let html = block.value;
+      // 기존 텍스트(HTML 태그가 없는 경우)를 HTML로 변환하여 하위 호환성 유지
+      if (!html.includes('<') && html.trim() !== '') {
+        html = html.split('\n').map(line => {
+          if (line.trim() === '') return '<p><br></p>';
+          
+          let style = '';
+          if (block.align === 'center') style += 'text-align: center; ';
+          else if (block.align === 'right') style += 'text-align: right; ';
+          
+          let tag = 'p';
+          if (block.size === 'h1') tag = 'h1';
+          else if (block.size === 'h2') tag = 'h2';
+
+          let inner = line;
+          if (block.highlight === 'yellow') {
+            inner = `<span style="background-color: yellow;">${line}</span>`;
+          } else if (block.highlight === 'green') {
+            inner = `<span style="background-color: aquamarine;">${line}</span>`;
+          }
+
+          return `<${tag} style="${style}">${inner}</${tag}>`;
+        }).join('');
+      } else if (html.trim() === '') {
+        html = '<p><br></p>';
+      }
+      divRef.current.innerHTML = html;
+      
+      // 만약 HTML로 자동 변환되었다면 상위 컴포넌트에도 변경사항 알림
+      if (html !== block.value) {
+        onChange(html);
+      }
+    }
+  }, []);
+
+  const handleInput = (e: React.FormEvent<HTMLDivElement>) => {
+    onChange(e.currentTarget.innerHTML);
+  };
+
+  return (
+    <div
+      ref={divRef}
+      contentEditable
+      suppressContentEditableWarning
+      onInput={handleInput}
+      onFocus={onFocus}
+      onBlur={(e) => onChange(e.currentTarget.innerHTML)}
+      className="w-full bg-transparent focus:outline-none min-h-[40px] text-white outline-none prose-editor"
+      placeholder="여기에 내용을 작성하세요..."
+    />
+  );
+};
+
+/* ─── 상세페이지 에디터 컴포넌트 ─── */
 interface Props {
   blocks: DetailBlock[];
   onChange: (blocks: DetailBlock[]) => void;
@@ -15,14 +75,13 @@ export default function DetailBlockEditor({ blocks, onChange, onShowToast }: Pro
   const [showSizeMenu, setShowSizeMenu] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
-  // 현재 포커스된 블록 찾기, 없으면 마지막 텍스트 블록
   const currentBlock = blocks.find(b => b.id === focusedId) 
     || [...blocks].reverse().find(b => b.type === 'text')
     || blocks[0];
 
   useEffect(() => {
     if (blocks.length === 0) {
-      onChange([{ id: crypto.randomUUID(), type: 'text', value: '', size: 'p', align: 'left' }]);
+      onChange([{ id: crypto.randomUUID(), type: 'text', value: '' }]);
     }
   }, [blocks, onChange]);
 
@@ -38,9 +97,8 @@ export default function DetailBlockEditor({ blocks, onChange, onShowToast }: Pro
     try {
       const compressed = await compressImage(file, 600, 0.7);
       
-      // 포커스된 블록 바로 뒤에 이미지 삽입, 그 뒤에 빈 텍스트 블록 추가
       const newImageBlock: DetailBlock = { id: crypto.randomUUID(), type: 'image', value: compressed };
-      const newTextBlock: DetailBlock = { id: crypto.randomUUID(), type: 'text', value: '', size: 'p', align: 'left' };
+      const newTextBlock: DetailBlock = { id: crypto.randomUUID(), type: 'text', value: '' };
       
       const newBlocks = [...blocks];
       const index = blocks.findIndex(b => b.id === (focusedId || currentBlock?.id));
@@ -67,18 +125,18 @@ export default function DetailBlockEditor({ blocks, onChange, onShowToast }: Pro
     }
   };
 
-  const updateCurrentBlock = (updates: Partial<DetailBlock>) => {
-    if (!currentBlock || currentBlock.type !== 'text') return;
-    onChange(blocks.map(b => b.id === currentBlock.id ? { ...b, ...updates } : b));
-  };
-
   const removeBlock = (id: string) => {
     const filtered = blocks.filter(b => b.id !== id);
     if (filtered.length === 0) {
-      onChange([{ id: crypto.randomUUID(), type: 'text', value: '', size: 'p', align: 'left' }]);
+      onChange([{ id: crypto.randomUUID(), type: 'text', value: '' }]);
     } else {
       onChange(filtered);
     }
+  };
+
+  // 브라우저 내장 WYSIWYG 명령어 실행
+  const applyFormat = (command: string, value?: string) => {
+    document.execCommand(command, false, value);
   };
 
   return (
@@ -91,31 +149,35 @@ export default function DetailBlockEditor({ blocks, onChange, onShowToast }: Pro
         <div className="relative">
           <button
             type="button"
+            onMouseDown={(e) => e.preventDefault()} // 포커스 잃음 방지
             onClick={() => setShowSizeMenu(!showSizeMenu)}
             disabled={currentBlock?.type !== 'text'}
             className="p-1.5 rounded-md flex items-center justify-center bg-zinc-800 text-zinc-300 border border-zinc-700 hover:text-white transition-colors disabled:opacity-50"
             title="텍스트 크기"
           >
-            <Type size={16} className={currentBlock?.type === 'text' ? "text-dinoclass-spark" : ""} />
+            <Type size={16} />
           </button>
           
           {showSizeMenu && currentBlock?.type === 'text' && (
             <div className="absolute top-full left-0 mt-1 w-32 bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl z-50 py-1 overflow-hidden">
               <button 
-                className={`w-full text-left px-4 py-2 text-sm hover:bg-zinc-700 ${currentBlock.size === 'h1' ? 'text-dinoclass-spark font-bold' : 'text-zinc-300'}`}
-                onClick={() => { updateCurrentBlock({ size: 'h1' }); setShowSizeMenu(false); }}
+                onMouseDown={(e) => e.preventDefault()}
+                className={`w-full text-left px-4 py-2 text-sm hover:bg-zinc-700 text-zinc-300`}
+                onClick={() => { applyFormat('formatBlock', 'H1'); setShowSizeMenu(false); }}
               >
                 제목 1
               </button>
               <button 
-                className={`w-full text-left px-4 py-2 text-sm hover:bg-zinc-700 ${currentBlock.size === 'h2' ? 'text-dinoclass-spark font-bold' : 'text-zinc-300'}`}
-                onClick={() => { updateCurrentBlock({ size: 'h2' }); setShowSizeMenu(false); }}
+                onMouseDown={(e) => e.preventDefault()}
+                className={`w-full text-left px-4 py-2 text-sm hover:bg-zinc-700 text-zinc-300`}
+                onClick={() => { applyFormat('formatBlock', 'H2'); setShowSizeMenu(false); }}
               >
                 제목 2
               </button>
               <button 
-                className={`w-full text-left px-4 py-2 text-sm hover:bg-zinc-700 ${currentBlock.size === 'p' || !currentBlock.size ? 'text-dinoclass-spark font-bold' : 'text-zinc-300'}`}
-                onClick={() => { updateCurrentBlock({ size: 'p' }); setShowSizeMenu(false); }}
+                onMouseDown={(e) => e.preventDefault()}
+                className={`w-full text-left px-4 py-2 text-sm hover:bg-zinc-700 text-zinc-300`}
+                onClick={() => { applyFormat('formatBlock', 'P'); setShowSizeMenu(false); }}
               >
                 본문
               </button>
@@ -129,22 +191,25 @@ export default function DetailBlockEditor({ blocks, onChange, onShowToast }: Pro
         <div className="flex bg-zinc-800 rounded-lg p-0.5 border border-zinc-700">
           <button 
             type="button" 
-            onClick={() => updateCurrentBlock({ align: 'left' })} 
-            className={`p-1.5 rounded-md ${currentBlock?.align === 'left' || !currentBlock?.align ? 'bg-zinc-700 text-dinoclass-spark' : 'text-zinc-400 hover:text-white'}`}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => applyFormat('justifyLeft')} 
+            className={`p-1.5 rounded-md text-zinc-400 hover:text-white`}
             disabled={currentBlock?.type !== 'text'}
             title="왼쪽 정렬"
           ><AlignLeft size={14} /></button>
           <button 
             type="button" 
-            onClick={() => updateCurrentBlock({ align: 'center' })} 
-            className={`p-1.5 rounded-md ${currentBlock?.align === 'center' ? 'bg-zinc-700 text-dinoclass-spark' : 'text-zinc-400 hover:text-white'}`}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => applyFormat('justifyCenter')} 
+            className={`p-1.5 rounded-md text-zinc-400 hover:text-white`}
             disabled={currentBlock?.type !== 'text'}
             title="가운데 정렬"
           ><AlignCenter size={14} /></button>
           <button 
             type="button" 
-            onClick={() => updateCurrentBlock({ align: 'right' })} 
-            className={`p-1.5 rounded-md ${currentBlock?.align === 'right' ? 'bg-zinc-700 text-dinoclass-spark' : 'text-zinc-400 hover:text-white'}`}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => applyFormat('justifyRight')} 
+            className={`p-1.5 rounded-md text-zinc-400 hover:text-white`}
             disabled={currentBlock?.type !== 'text'}
             title="오른쪽 정렬"
           ><AlignRight size={14} /></button>
@@ -156,21 +221,23 @@ export default function DetailBlockEditor({ blocks, onChange, onShowToast }: Pro
         <div className="flex bg-zinc-800 rounded-lg p-0.5 border border-zinc-700 items-center">
           <button 
             type="button" 
-            onClick={() => updateCurrentBlock({ highlight: currentBlock?.highlight === 'yellow' ? undefined : 'yellow' })} 
-            className={`p-1.5 rounded-md flex items-center gap-1 ${currentBlock?.highlight === 'yellow' ? 'bg-zinc-700 text-dinoclass-spark' : 'text-zinc-400 hover:text-white'}`}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => applyFormat('hiliteColor', 'yellow')} 
+            className={`p-1.5 rounded-md flex items-center gap-1 text-zinc-400 hover:text-white`}
             disabled={currentBlock?.type !== 'text'}
-            title="노란색 강조"
+            title="선택한 영역 노란색 강조"
           >
             <PaintBucket size={14} className="text-[#FEE800]" />
           </button>
           <button 
             type="button" 
-            onClick={() => updateCurrentBlock({ highlight: currentBlock?.highlight === 'green' ? undefined : 'green' })} 
-            className={`p-1.5 rounded-md flex items-center gap-1 ${currentBlock?.highlight === 'green' ? 'bg-zinc-700 text-dinoclass-spark' : 'text-zinc-400 hover:text-white'}`}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => applyFormat('hiliteColor', 'aquamarine')} 
+            className={`p-1.5 rounded-md flex items-center gap-1 text-zinc-400 hover:text-white`}
             disabled={currentBlock?.type !== 'text'}
-            title="초록색 강조"
+            title="선택한 영역 초록색 강조"
           >
-            <PaintBucket size={14} className="text-[#34D399]" />
+            <PaintBucket size={14} className="text-dinoclass-spark" />
           </button>
           
           <div className="w-[1px] h-4 bg-zinc-700 mx-1" />
@@ -207,7 +274,7 @@ export default function DetailBlockEditor({ blocks, onChange, onShowToast }: Pro
         }}
       >
         {blocks.map((block) => (
-          <div key={block.id} className="relative group">
+          <div key={block.id} className="relative group min-h-[40px]">
             {/* 삭제 버튼 */}
             <div className="absolute -right-2 -top-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
               <button
@@ -220,24 +287,12 @@ export default function DetailBlockEditor({ blocks, onChange, onShowToast }: Pro
             </div>
             
             {block.type === 'text' ? (
-              <textarea
-                value={block.value}
-                onFocus={() => setFocusedId(block.id)}
-                onChange={(e) => {
-                  onChange(blocks.map(b => b.id === block.id ? { ...b, value: e.target.value } : b));
-                  // 자동 높이 조절
-                  e.target.style.height = 'auto';
-                  e.target.style.height = e.target.scrollHeight + 'px';
+              <TextEditorBlock 
+                block={block} 
+                onChange={(html) => {
+                  onChange(blocks.map(b => b.id === block.id ? { ...b, value: html } : b));
                 }}
-                className={`w-full bg-transparent focus:outline-none resize-none overflow-hidden transition-all placeholder:text-zinc-700 ${
-                  block.size === 'h1' ? 'text-2xl font-bold' : 
-                  block.size === 'h2' ? 'text-xl font-bold' : 'text-sm'
-                } ${block.align === 'center' ? 'text-center' : block.align === 'right' ? 'text-right' : 'text-left'} ${
-                  block.highlight === 'yellow' ? 'bg-[#FEE800]/20 text-[#FEE800]' : 
-                  block.highlight === 'green' ? 'bg-[#34D399]/20 text-[#34D399]' : 'text-white'
-                }`}
-                placeholder="여기에 내용을 작성하세요..."
-                style={{ minHeight: '40px' }}
+                onFocus={() => setFocusedId(block.id)}
               />
             ) : (
               <div className="flex justify-center bg-zinc-950 rounded-lg overflow-hidden border border-zinc-800">

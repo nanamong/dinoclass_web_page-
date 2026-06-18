@@ -56,11 +56,12 @@ export async function addSubscriber(subscriber: Omit<Subscriber, 'id' | 'created
     try {
       const webhookUrl = localStorage.getItem('google_sheet_webhook_url');
       if (webhookUrl && webhookUrl.trim()) {
+        const payload = { ...newSub, type: 'newsletter' };
         fetch(webhookUrl.trim(), {
           method: 'POST',
           mode: 'no-cors',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newSub)
+          body: JSON.stringify(payload)
         }).catch(err => console.error('Webhook send failed:', err));
       }
     } catch (e) {

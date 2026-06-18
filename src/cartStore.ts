@@ -5,6 +5,10 @@ const CART_STORAGE_KEY = 'dinoclass_cart'
 export interface CartItem {
   productId: string
   addedAt: number
+  selectedOption?: {
+    name: string
+    price: number
+  }
 }
 
 // 초기 장바구니 로드
@@ -29,23 +33,25 @@ export function getCartItems(): CartItem[] {
   return loadCart()
 }
 
-export async function getCartProducts(): Promise<Product[]> {
+export async function getCartProducts(): Promise<(Product & { selectedOption?: { name: string; price: number } })[]> {
   const cart = loadCart()
-  const products: Product[] = []
+  const products: (Product & { selectedOption?: { name: string; price: number } })[] = []
   for (const item of cart) {
     const p = await getProductById(item.productId)
-    if (p) products.push(p)
+    if (p) {
+      products.push({ ...p, selectedOption: item.selectedOption })
+    }
   }
   return products
 }
 
-export function addToCart(productId: string) {
+export function addToCart(productId: string, selectedOption?: { name: string; price: number }) {
   const cart = loadCart()
   // 이미 담겨있다면 리턴 (디지털 상품이므로 중복 불가)
   if (cart.find(c => c.productId === productId)) {
     return false // 이미 존재함
   }
-  cart.push({ productId, addedAt: Date.now() })
+  cart.push({ productId, addedAt: Date.now(), selectedOption })
   saveCart(cart)
   return true // 추가됨
 }
